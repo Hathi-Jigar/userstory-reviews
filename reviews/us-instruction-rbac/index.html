@@ -47,6 +47,20 @@
   .approve-btn:hover { background: #15803D; }
   .changes-btn { background: transparent; color: var(--brand); border: 1.5px solid var(--brand); padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
 
+  /* Edit Mode */
+  .edit-toggle { background: transparent; color: var(--text-sub); border: 1.5px solid var(--border); padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+  .edit-toggle:hover { border-color: var(--text-sub); }
+  .edit-toggle.active { background: #1A1D23; color: white; border-color: #1A1D23; }
+  .edit-save-btn { background: #16A34A; color: white; border: none; padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; display: none; }
+  .edit-save-btn.visible { display: inline-block; }
+  .edit-cancel-btn { background: transparent; color: var(--text-sub); border: 1.5px solid var(--border); padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; display: none; }
+  .edit-cancel-btn.visible { display: inline-block; }
+  .spec-editor { width: 100%; min-height: 600px; padding: 20px; border: 2px solid var(--brand); border-radius: 12px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; line-height: 1.7; color: var(--text); background: var(--white); resize: vertical; outline: none; display: none; }
+  .spec-editor.visible { display: block; }
+  .spec-editor:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(232,69,10,0.1); }
+  .edit-banner { background: #FFF7ED; border-bottom: 1px solid #FED7AA; padding: 8px 24px; font-size: 12px; color: #92400E; font-weight: 500; display: none; align-items: center; gap: 8px; grid-column: 1 / -1; }
+  .edit-banner.visible { display: flex; }
+
   /* Markdown rendered content */
   .spec-content h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
   .spec-content h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; border-bottom: 2px solid var(--border); padding-bottom: 6px; }
@@ -172,13 +186,18 @@
     </div>
     <div class="top-bar-right">
       <span class="reviewer-name" id="reviewerDisplay"></span>
+      <button class="edit-toggle" id="editToggle" onclick="toggleEditMode()">&#9998; Edit</button>
+      <button class="edit-cancel-btn" id="editCancelBtn" onclick="cancelEdit()">Cancel</button>
+      <button class="edit-save-btn" id="editSaveBtn" onclick="saveEdit()">Save Changes</button>
       <button class="changes-btn" onclick="submitDecision('changes_needed')">Changes Needed</button>
       <button class="approve-btn" onclick="submitDecision('approved')">Approve</button>
     </div>
   </div>
+  <div class="edit-banner" id="editBanner">&#9998; Edit Mode — you are editing the raw markdown. Click "Save Changes" when done.</div>
 
   <div class="main-content">
     <div class="spec-content" id="specContent">Loading spec...</div>
+    <textarea class="spec-editor" id="specEditor"></textarea>
     <div class="prototype-section">
       <div class="prototype-header">
         <span>Interactive Prototype</span>
@@ -231,6 +250,9 @@
   let comments = [];
   let selectedText = '';
   let currentFilter = 'all';
+  let rawMarkdown = '';
+  let isEditMode = false;
+  let specSha = null;
 
   function getToken() { return localStorage.getItem('review_token'); }
   function getName() { return localStorage.getItem('reviewer_name'); }
@@ -301,14 +323,82 @@
       });
       if (res.ok) {
         const data = await res.json();
-        const md = decodeURIComponent(escape(atob(data.content)));
-        document.getElementById('specContent').innerHTML = marked.parse(md);
+        rawMarkdown = decodeURIComponent(escape(atob(data.content)));
+        specSha = data.sha;
+        document.getElementById('specContent').innerHTML = marked.parse(rawMarkdown);
       } else {
         document.getElementById('specContent').innerHTML = '<p style="color:#991B1B">Failed to load spec. Check your access key.</p>';
       }
     } catch (e) {
       document.getElementById('specContent').innerHTML = '<p style="color:#991B1B">Error loading spec: ' + e.message + '</p>';
     }
+  }
+
+  // === EDIT MODE ===
+  function toggleEditMode() {
+    if (isEditMode) return;
+    isEditMode = true;
+    document.getElementById('specContent').style.display = 'none';
+    const editor = document.getElementById('specEditor');
+    editor.value = rawMarkdown;
+    editor.classList.add('visible');
+    document.getElementById('editToggle').classList.add('active');
+    document.getElementById('editToggle').innerHTML = '&#9998; Editing...';
+    document.getElementById('editSaveBtn').classList.add('visible');
+    document.getElementById('editCancelBtn').classList.add('visible');
+    document.getElementById('editBanner').classList.add('visible');
+    editor.focus();
+  }
+
+  function cancelEdit() {
+    isEditMode = false;
+    document.getElementById('specEditor').classList.remove('visible');
+    document.getElementById('specContent').style.display = '';
+    document.getElementById('editToggle').classList.remove('active');
+    document.getElementById('editToggle').innerHTML = '&#9998; Edit';
+    document.getElementById('editSaveBtn').classList.remove('visible');
+    document.getElementById('editCancelBtn').classList.remove('visible');
+    document.getElementById('editBanner').classList.remove('visible');
+  }
+
+  async function saveEdit() {
+    const newMarkdown = document.getElementById('specEditor').value;
+    if (newMarkdown === rawMarkdown) {
+      showToast('No changes to save', '');
+      cancelEdit();
+      return;
+    }
+
+    document.getElementById('loading').classList.add('show');
+    try {
+      // Get latest sha
+      const getRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${SPEC_PATH}`, {
+        headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (getRes.ok) { specSha = (await getRes.json()).sha; }
+
+      const content = btoa(unescape(encodeURIComponent(newMarkdown)));
+      const body = { message: `Edit by ${getName()}: updated spec`, content, branch: 'main', sha: specSha };
+
+      const putRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${SPEC_PATH}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `token ${getToken()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!putRes.ok) throw new Error('Save failed');
+
+      const putData = await putRes.json();
+      specSha = putData.content.sha;
+      rawMarkdown = newMarkdown;
+      document.getElementById('specContent').innerHTML = marked.parse(rawMarkdown);
+      cancelEdit();
+      applyHighlights();
+      showToast('Changes saved successfully', 'success');
+    } catch (e) {
+      showToast('Failed to save changes — ' + e.message, 'error');
+    }
+    document.getElementById('loading').classList.remove('show');
   }
 
   async function loadComments() {
