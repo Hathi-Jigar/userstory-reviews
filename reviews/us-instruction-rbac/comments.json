@@ -8,6 +8,10 @@
     "status": "open",
     "resolvedBy": null,
     "resolvedAt": null,
-    "reply": null
+    "reply": {
+      "author": "Jigar",
+      "text": "understood",
+      "createdAt": "2026-03-17T12:09:09.082Z"
+    }
   }
 ]
