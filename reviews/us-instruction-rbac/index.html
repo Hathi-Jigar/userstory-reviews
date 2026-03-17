@@ -61,6 +61,38 @@
   .edit-banner { background: #FFF7ED; border-bottom: 1px solid #FED7AA; padding: 8px 24px; font-size: 12px; color: #92400E; font-weight: 500; display: none; align-items: center; gap: 8px; grid-column: 1 / -1; }
   .edit-banner.visible { display: flex; }
 
+  /* Move button */
+  .move-btn { background: #1A1D23; color: white; border: none; padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 6px; }
+  .move-btn:hover { background: #2d3040; }
+
+  /* Move modal */
+  .move-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 800; }
+  .move-overlay.visible { display: flex; }
+  .move-modal { background: white; border-radius: 16px; width: 480px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 8px 40px rgba(0,0,0,0.2); overflow: hidden; }
+  .move-modal-header { padding: 20px 24px 12px; border-bottom: 1px solid var(--border); }
+  .move-modal-header h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .move-modal-header p { font-size: 13px; color: var(--text-sub); }
+  .move-breadcrumb { padding: 10px 24px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-sub); display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .move-breadcrumb span { cursor: pointer; color: var(--brand); font-weight: 500; }
+  .move-breadcrumb span:last-child { color: var(--text); cursor: default; }
+  .move-folder-list { flex: 1; overflow-y: auto; padding: 8px 0; }
+  .move-folder-list::-webkit-scrollbar { width: 4px; }
+  .move-folder-list::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+  .move-folder-item { display: flex; align-items: center; gap: 10px; padding: 12px 24px; cursor: pointer; transition: background 0.1s; font-size: 14px; color: var(--text); }
+  .move-folder-item:hover { background: var(--bg); }
+  .move-folder-item.selected { background: var(--brand-light); border-left: 3px solid var(--brand); }
+  .move-folder-icon { font-size: 18px; flex-shrink: 0; }
+  .move-folder-name { flex: 1; font-weight: 500; }
+  .move-folder-arrow { color: var(--text-muted); font-size: 14px; }
+  .move-modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: space-between; align-items: center; }
+  .move-selected-path { font-size: 12px; color: var(--text-sub); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .move-cancel-btn { background: none; border: 1px solid var(--border); padding: 8px 18px; border-radius: 8px; font-size: 13px; cursor: pointer; font-family: inherit; color: var(--text-sub); }
+  .move-confirm-btn { background: var(--brand); color: white; border: none; padding: 8px 24px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .move-confirm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .move-loading { padding: 40px; text-align: center; color: var(--text-muted); font-size: 13px; }
+  .move-filename-input { width: 100%; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; margin-top: 8px; }
+  .move-filename-input:focus { border-color: var(--brand); }
+
   /* Markdown rendered content */
   .spec-content h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
   .spec-content h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; border-bottom: 2px solid var(--border); padding-bottom: 6px; }
@@ -191,6 +223,7 @@
       <button class="edit-save-btn" id="editSaveBtn" onclick="saveEdit()">Save Changes</button>
       <button class="changes-btn" onclick="submitDecision('changes_needed')">Changes Needed</button>
       <button class="approve-btn" onclick="submitDecision('approved')">Approve</button>
+      <button class="move-btn" id="moveBtn" onclick="openMoveModal()">&#x1F4E6; Move</button>
     </div>
   </div>
   <div class="edit-banner" id="editBanner">&#9998; Edit Mode — you are editing the raw markdown. Click "Save Changes" when done.</div>
@@ -239,6 +272,31 @@
 <button class="toggle-sidebar" onclick="document.getElementById('sidebar').classList.toggle('open')">&#x1F4AC;</button>
 <div class="toast" id="toast"></div>
 <div class="loading-overlay" id="loading"><span>Saving...</span></div>
+
+<!-- Move Modal -->
+<div class="move-overlay" id="moveOverlay">
+  <div class="move-modal">
+    <div class="move-modal-header">
+      <h3>Move to Product Management</h3>
+      <p>Select the folder where this user story should be placed</p>
+    </div>
+    <div class="move-breadcrumb" id="moveBreadcrumb">
+      <span onclick="navigateFolder('')">product-management</span>
+    </div>
+    <div class="move-folder-list" id="moveFolderList">
+      <div class="move-loading">Loading folders...</div>
+    </div>
+    <div style="padding:12px 24px 0;border-top:1px solid var(--border)">
+      <label style="font-size:12px;font-weight:600;color:var(--text-sub)">File name</label>
+      <input class="move-filename-input" id="moveFilename" value="US-instruction-rbac.md">
+    </div>
+    <div class="move-modal-footer">
+      <div class="move-selected-path" id="moveSelectedPath">Select a folder...</div>
+      <button class="move-cancel-btn" onclick="closeMoveModal()">Cancel</button>
+      <button class="move-confirm-btn" id="moveConfirmBtn" onclick="confirmMove()" disabled>Move Here</button>
+    </div>
+  </div>
+</div>
 
 <script>
   const REPO_OWNER = 'Hathi-Jigar';
@@ -608,6 +666,166 @@
       updateBadge(decision, getName());
       showToast(decision === 'approved' ? '&#10003; Story approved!' : 'Changes requested — reviewer notified', 'success');
     } catch (e) { showToast('Failed to save decision', 'error'); }
+  }
+
+  // === MOVE TO PRODUCT-MANAGEMENT ===
+  const TARGET_REPO_OWNER = 'digiqc-hq';
+  const TARGET_REPO_NAME = 'product-management';
+  let currentMovePath = '';
+  let selectedMovePath = '';
+
+  function openMoveModal() {
+    document.getElementById('moveOverlay').classList.add('visible');
+    navigateFolder('');
+  }
+
+  function closeMoveModal() {
+    document.getElementById('moveOverlay').classList.remove('visible');
+    selectedMovePath = '';
+  }
+
+  async function navigateFolder(path) {
+    currentMovePath = path;
+    selectedMovePath = '';
+    document.getElementById('moveConfirmBtn').disabled = true;
+    document.getElementById('moveSelectedPath').textContent = 'Select a folder...';
+
+    // Update breadcrumb
+    const bc = document.getElementById('moveBreadcrumb');
+    const parts = path ? path.split('/') : [];
+    let bcHtml = '<span onclick="navigateFolder(\'\')">product-management</span>';
+    let accumulated = '';
+    parts.forEach((p, i) => {
+      accumulated += (i > 0 ? '/' : '') + p;
+      const accCopy = accumulated;
+      if (i < parts.length - 1) {
+        bcHtml += ' / <span onclick="navigateFolder(\'' + accCopy + '\')">' + p + '</span>';
+      } else {
+        bcHtml += ' / <span>' + p + '</span>';
+      }
+    });
+    bc.innerHTML = bcHtml;
+
+    // Load folder contents
+    const list = document.getElementById('moveFolderList');
+    list.innerHTML = '<div class="move-loading">Loading...</div>';
+
+    try {
+      const url = path
+        ? `https://api.github.com/repos/${TARGET_REPO_OWNER}/${TARGET_REPO_NAME}/contents/${path}`
+        : `https://api.github.com/repos/${TARGET_REPO_OWNER}/${TARGET_REPO_NAME}/contents`;
+      const res = await fetch(url, {
+        headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (!res.ok) throw new Error('Failed to load');
+      const items = await res.json();
+      const folders = items.filter(i => i.type === 'dir').sort((a, b) => a.name.localeCompare(b.name));
+
+      if (folders.length === 0) {
+        list.innerHTML = '<div class="move-loading">No subfolders — you can move the file here</div>';
+        selectFolder(path);
+        return;
+      }
+
+      list.innerHTML = folders.map(f => {
+        return `<div class="move-folder-item" onclick="handleFolderClick(event, '${f.path}')" ondblclick="navigateFolder('${f.path}')">
+          <span class="move-folder-icon">&#x1F4C1;</span>
+          <span class="move-folder-name">${f.name}</span>
+          <span class="move-folder-arrow">&#x276F;</span>
+        </div>`;
+      }).join('');
+    } catch (e) {
+      list.innerHTML = '<div class="move-loading" style="color:#991B1B">Failed to load folders</div>';
+    }
+  }
+
+  function handleFolderClick(event, path) {
+    // Single click = select, double click = navigate into
+    document.querySelectorAll('.move-folder-item').forEach(i => i.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+    selectFolder(path);
+  }
+
+  function selectFolder(path) {
+    selectedMovePath = path || currentMovePath;
+    document.getElementById('moveConfirmBtn').disabled = false;
+    document.getElementById('moveSelectedPath').textContent = selectedMovePath || 'Root (product-management/)';
+  }
+
+  async function confirmMove() {
+    const filename = document.getElementById('moveFilename').value.trim();
+    if (!filename) { showToast('Filename is required', 'error'); return; }
+    if (!selectedMovePath && !currentMovePath) { showToast('Select a folder first', 'error'); return; }
+
+    const targetPath = (selectedMovePath || currentMovePath) + '/' + filename;
+    document.getElementById('loading').classList.add('show');
+
+    try {
+      // 1. Push spec.md to product-management
+      const content = btoa(unescape(encodeURIComponent(rawMarkdown)));
+
+      // Check if file already exists
+      let sha = null;
+      const checkRes = await fetch(`https://api.github.com/repos/${TARGET_REPO_OWNER}/${TARGET_REPO_NAME}/contents/${targetPath}`, {
+        headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (checkRes.ok) { sha = (await checkRes.json()).sha; }
+
+      const body = {
+        message: `Move ${filename} from review to ${selectedMovePath || currentMovePath}`,
+        content,
+        branch: 'main'
+      };
+      if (sha) body.sha = sha;
+
+      const putRes = await fetch(`https://api.github.com/repos/${TARGET_REPO_OWNER}/${TARGET_REPO_NAME}/contents/${targetPath}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `token ${getToken()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!putRes.ok) throw new Error('Failed to move spec');
+
+      // 2. Update decision.json to record the move
+      const moveMeta = {
+        decision: 'moved',
+        movedTo: targetPath,
+        movedBy: getName(),
+        timestamp: new Date().toISOString(),
+        targetRepo: `${TARGET_REPO_OWNER}/${TARGET_REPO_NAME}`
+      };
+
+      const decPath = `reviews/${STORY_FOLDER}/decision.json`;
+      let decSha = null;
+      const decRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${decPath}`, {
+        headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (decRes.ok) { decSha = (await decRes.json()).sha; }
+
+      const decBody = {
+        message: `Moved to ${TARGET_REPO_OWNER}/${TARGET_REPO_NAME}/${targetPath}`,
+        content: btoa(unescape(encodeURIComponent(JSON.stringify(moveMeta, null, 2)))),
+        branch: 'main'
+      };
+      if (decSha) decBody.sha = decSha;
+
+      await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${decPath}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `token ${getToken()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(decBody)
+      });
+
+      // Update badge
+      const badge = document.getElementById('reviewBadge');
+      badge.textContent = 'Moved to ' + (selectedMovePath || currentMovePath);
+      badge.className = 'review-badge approved';
+
+      closeMoveModal();
+      showToast('Story moved to product-management/' + targetPath, 'success');
+    } catch (e) {
+      showToast('Failed to move — ' + e.message, 'error');
+    }
+    document.getElementById('loading').classList.remove('show');
   }
 
   function showToast(msg, type) {
