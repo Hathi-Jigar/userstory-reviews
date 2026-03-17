@@ -37,7 +37,10 @@
   .top-bar { background: var(--white); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; grid-column: 1 / -1; }
   .top-bar-left { display: flex; align-items: center; gap: 12px; }
   .logo { font-size: 14px; font-weight: 700; color: var(--brand); }
-  .review-badge { background: var(--comment-bg); border: 1px solid var(--comment-border); color: #92400E; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .review-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.3s; }
+  .review-badge.under-review { background: var(--comment-bg); border: 1px solid var(--comment-border); color: #92400E; }
+  .review-badge.approved { background: #DCFCE7; border: 1px solid #86EFAC; color: #166534; }
+  .review-badge.changes-needed { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
   .top-bar-right { display: flex; align-items: center; gap: 10px; }
   .reviewer-name { font-size: 13px; color: var(--text-sub); }
   .approve-btn { background: #16A34A; color: white; border: none; padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
@@ -164,7 +167,7 @@
   <div class="top-bar">
     <div class="top-bar-left">
       <span class="logo">digiQC</span>
-      <span class="review-badge">Under Review</span>
+      <span class="review-badge under-review" id="reviewBadge">Under Review</span>
       <span style="font-size:13px;color:var(--text-sub);margin-left:8px">Instruction: Role-Based Action Control</span>
     </div>
     <div class="top-bar-right">
@@ -258,7 +261,36 @@
   async function init() {
     await loadSpec();
     await loadComments();
+    await loadDecision();
     setupTextSelection();
+  }
+
+  async function loadDecision() {
+    try {
+      const path = `reviews/${STORY_FOLDER}/decision.json`;
+      const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
+        headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const decision = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+        updateBadge(decision.decision, decision.reviewer);
+      }
+    } catch (e) { /* no decision yet */ }
+  }
+
+  function updateBadge(decision, reviewer) {
+    const badge = document.getElementById('reviewBadge');
+    if (decision === 'approved') {
+      badge.textContent = 'Approved by ' + reviewer;
+      badge.className = 'review-badge approved';
+    } else if (decision === 'changes_needed') {
+      badge.textContent = 'Changes Needed — ' + reviewer;
+      badge.className = 'review-badge changes-needed';
+    } else {
+      badge.textContent = 'Under Review';
+      badge.className = 'review-badge under-review';
+    }
   }
 
   // Load spec markdown and render
@@ -483,7 +515,8 @@
         headers: { 'Authorization': `token ${getToken()}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
-      showToast(decision === 'approved' ? '&#10003; Story approved!' : 'Changes requested', 'success');
+      updateBadge(decision, getName());
+      showToast(decision === 'approved' ? '&#10003; Story approved!' : 'Changes requested — reviewer notified', 'success');
     } catch (e) { showToast('Failed to save decision', 'error'); }
   }
 
