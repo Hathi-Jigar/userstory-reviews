@@ -20,9 +20,9 @@
     "comment": "this need change as per the below comment",
     "author": "Jigar",
     "createdAt": "2026-03-17T12:45:54.123Z",
-    "status": "open",
-    "resolvedBy": null,
-    "resolvedAt": null,
+    "status": "resolved",
+    "resolvedBy": "Jigar",
+    "resolvedAt": "2026-03-17T12:46:00.523Z",
     "reply": null
   }
 ]
