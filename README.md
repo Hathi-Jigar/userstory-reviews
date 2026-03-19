@@ -7,6 +7,13 @@ Review space for digiQC user stories. Reviewers comment inline before stories ar
 | # | User Story | Status | Review Link |
 |---|-----------|--------|-------------|
 | 1 | Instruction: Role-Based Action Control & Team-Scoped Visibility | Under Review | [Open Review](https://hathi-jigar.github.io/userstory-reviews/reviews/us-instruction-rbac/) |
+| 2 | Issue Assignment with Assignee & Notification Recipients | Under Review | [Open Review](https://hathi-jigar.github.io/userstory-reviews/reviews/us-issue-assignment-notification/) |
+
+## Dashboard
+
+View all stories with live status, comments, and review links:
+
+**[Open Dashboard](https://hathi-jigar.github.io/userstory-reviews/)**
 
 ## How It Works
 
