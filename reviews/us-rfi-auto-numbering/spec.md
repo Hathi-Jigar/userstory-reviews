@@ -6,6 +6,10 @@
 
 **Version:** v3.0 — Final
 
+**Interactive Prototype:**
+- [View Live Screen](https://digiqc-hq.github.io/product-management/screens/us-rfi-auto-numbering/)
+- [View Source Code](https://github.com/digiqc-hq/product-management/blob/main/docs/screens/us-rfi-auto-numbering/index.html)
+
 ---
 
 ## 📝 Brief Description
