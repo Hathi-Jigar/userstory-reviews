@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>digiQC — Checklist Bulk Actions</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Rubik',sans-serif; background:#f5f6f8; color:#1a1a2e; font-size:14px; }
+
+.topnav { background:#fff; border-bottom:1px solid #e8eaed; padding:0 24px; display:flex; align-items:center; height:56px; gap:32px; position:sticky; top:0; z-index:100; }
+.logo { font-size:18px; font-weight:700; color:#FC5027; }
+.nav-links { display:flex; gap:28px; }
+.nav-links a { text-decoration:none; color:#666; font-size:14px; font-weight:500; }
+.nav-links a.active { color:#FC5027; border-bottom:2px solid #FC5027; }
+
+.page-header { background:#fff; border-bottom:1px solid #e8eaed; padding:0 24px; }
+.breadcrumb { display:flex; align-items:center; gap:8px; font-size:13px; color:#888; padding:10px 0 0; }
+.proj-badge { background:#e8f5e9; color:#2e7d32; font-size:11px; font-weight:600; padding:2px 8px; border-radius:12px; }
+.tab-row { display:flex; margin-top:8px; }
+.tab-row .tab { padding:12px 18px; font-size:13px; font-weight:500; color:#666; cursor:pointer; border-bottom:2px solid transparent; }
+.tab-row .tab.active { color:#FC5027; border-bottom-color:#FC5027; }
+
+.content { padding:24px; max-width:1320px; }
+.section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.section-title { font-size:20px; font-weight:600; }
+.section-sub { font-size:13px; color:#888; margin-top:2px; }
+.header-actions { display:flex; align-items:center; gap:10px; }
+.filter-sel { border:1px solid #ddd; border-radius:8px; padding:7px 12px; font-size:13px; background:#fff; color:#444; min-width:130px; cursor:pointer; }
+.search-box { border:1px solid #ddd; border-radius:8px; padding:7px 12px 7px 32px; font-size:13px; background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23aaa'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'/%3E%3C/svg%3E") no-repeat 10px center / 14px; width:200px; }
+.btn-add { background:#FC5027; color:#fff; border:none; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:500; cursor:pointer; display:flex; align-items:center; gap:6px; }
+
+/* BULK TOOLBAR */
+.bulk-toolbar { background:#fff3f0; border:1px solid #ffd5c8; border-radius:8px; padding:10px 16px; display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.bulk-toolbar.hidden { display:none; }
+.bulk-count { font-size:13px; font-weight:600; color:#FC5027; }
+.bulk-sep { color:#ddd; font-size:16px; }
+.bulk-btn { display:flex; align-items:center; gap:6px; border:1px solid #ddd; background:#fff; border-radius:7px; padding:6px 13px; font-size:13px; font-weight:500; color:#333; cursor:pointer; }
+.bulk-btn:hover { border-color:#FC5027; color:#FC5027; }
+.bulk-btn svg { width:15px; height:15px; }
+.clear-sel { margin-left:auto; color:#888; cursor:pointer; font-size:13px; display:flex; align-items:center; gap:4px; }
+.clear-sel:hover { color:#FC5027; }
+
+.qs-banner { background:#fff8f6; border:1px solid #ffd5c8; border-radius:8px; padding:10px 16px; margin-bottom:10px; display:none; align-items:center; gap:12px; font-size:13px; }
+.qs-banner.show { display:flex; }
+.qs-btn { padding:4px 12px; border-radius:6px; cursor:pointer; font-size:12px; font-weight:500; border:1px solid #FC5027; color:#FC5027; background:#fff; }
+.qs-btn:hover { background:#FC5027; color:#fff; }
+
+/* TABLE */
+.table-wrap { background:#fff; border-radius:12px; border:1px solid #e8eaed; overflow:hidden; }
+table { width:100%; border-collapse:collapse; }
+thead tr { background:#fafafa; border-bottom:1px solid #e8eaed; }
+th { padding:12px 14px; text-align:left; font-size:11px; font-weight:600; color:#888; text-transform:uppercase; letter-spacing:0.5px; white-space:nowrap; }
+td { padding:13px 14px; font-size:13px; color:#333; border-bottom:1px solid #f0f2f5; vertical-align:middle; }
+tr:last-child td { border-bottom:none; }
+tr.selected td { background:#fff8f6; }
+tr:hover td { background:#fafafa; }
+tr.selected:hover td { background:#fff3ef; }
+.cb { width:16px; height:16px; accent-color:#FC5027; cursor:pointer; }
+.cl-name { font-weight:500; color:#1a1a2e; }
+.user-chip { font-size:12px; color:#555; }
+.dash { color:#ccc; }
+.badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+.badge-live { background:#e8f5e9; color:#2e7d32; }
+.badge-draft { background:#f0f0f0; color:#555; }
+.badge-archived { background:#fff3e0; color:#e65100; }
+.row-acts { display:flex; gap:6px; }
+.ra-btn { background:none; border:none; cursor:pointer; color:#bbb; padding:3px; border-radius:4px; display:flex; }
+.ra-btn:hover { color:#FC5027; background:#fff0ec; }
+.ra-btn svg { width:15px; height:15px; }
+
+/* DROPDOWN */
+.dd { position:relative; display:inline-block; }
+.dd-menu { position:absolute; top:calc(100% + 6px); left:0; background:#fff; border:1px solid #e8eaed; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.12); min-width:215px; z-index:200; display:none; overflow:hidden; }
+.dd-menu.show { display:block; }
+.dm-item { padding:11px 16px; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:10px; color:#333; }
+.dm-item:hover { background:#fff8f6; color:#FC5027; }
+.dm-item svg { width:15px; height:15px; color:#aaa; flex-shrink:0; }
+.dm-item:hover svg { color:#FC5027; }
+.dm-div { height:1px; background:#f0f2f5; }
+
+/* DRAWER */
+.dr-overlay { position:fixed; inset:0; background:rgba(0,0,0,.42); z-index:300; display:none; }
+.dr-overlay.show { display:block; }
+.drawer { position:fixed; top:0; right:-560px; width:520px; height:100vh; background:#fff; z-index:400; display:flex; flex-direction:column; transition:right .27s cubic-bezier(.4,0,.2,1); box-shadow:-4px 0 32px rgba(0,0,0,.14); }
+.drawer.open { right:0; }
+.dr-head { padding:16px 20px; border-bottom:1px solid #e8eaed; display:flex; align-items:center; justify-content:space-between; }
+.dr-title { font-size:15px; font-weight:600; color:#1a1a2e; }
+.dr-close { background:none; border:none; cursor:pointer; color:#aaa; padding:4px; border-radius:4px; display:flex; }
+.dr-close:hover { color:#333; }
+.dr-body { flex:1; overflow-y:auto; padding:0 20px 20px; }
+.dr-foot { padding:14px 20px; border-top:1px solid #e8eaed; display:flex; gap:10px; justify-content:flex-end; background:#fff; }
+
+/* ASSIGN/REMOVE TABS — matches screenshot */
+.ar-tabs { display:flex; margin:14px 0 14px; border:1px solid #e8eaed; border-radius:8px; overflow:hidden; width:fit-content; }
+.ar-tab { padding:7px 22px; font-size:13px; font-weight:500; color:#555; cursor:pointer; background:#fff; border:none; }
+.ar-tab.active { background:#1a1a2e; color:#fff; }
+
+/* INFO BANNER */
+.info-banner { background:#e8f4fd; border:1px solid #b3d9f5; border-radius:8px; padding:10px 14px; margin-bottom:14px; display:flex; gap:10px; align-items:flex-start; font-size:12px; color:#1565c0; line-height:1.5; }
+.info-banner svg { width:16px; height:16px; flex-shrink:0; margin-top:1px; }
+
+/* REMOVE LIST — shows assigned users */
+.rm-list { border:1px solid #e8eaed; border-radius:8px; overflow:hidden; }
+.rm-list-head { background:#fafafa; padding:8px 14px; font-size:11px; font-weight:600; color:#888; text-transform:uppercase; letter-spacing:0.4px; border-bottom:1px solid #e8eaed; }
+.rm-row { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid #f5f5f5; }
+.rm-row:last-child { border-bottom:none; }
+.rm-row-left { display:flex; align-items:center; gap:10px; }
+.avatar { width:28px; height:28px; border-radius:50%; color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.av-proj { background:#FC5027; }
+.av-ext  { background:#5c6bc0; }
+.rm-name { font-size:13px; font-weight:500; }
+.rm-type { font-size:11px; color:#aaa; }
+.rm-cb { width:16px; height:16px; accent-color:#FC5027; cursor:pointer; }
+
+/* USER SELECT */
+.us-wrap { border:1px solid #ddd; border-radius:8px; padding:8px 10px; min-height:42px; cursor:pointer; display:flex; flex-wrap:wrap; gap:5px; align-items:center; background:#fff; }
+.us-wrap:focus-within { border-color:#FC5027; box-shadow:0 0 0 3px rgba(252,80,39,.1); }
+.us-wrap input { border:none; outline:none; font-size:13px; flex:1; min-width:80px; background:transparent; }
+.u-tag { background:#fff0ec; color:#FC5027; border-radius:5px; padding:3px 8px; font-size:12px; font-weight:500; display:flex; align-items:center; gap:5px; }
+.u-tag-x { cursor:pointer; color:#aaa; font-size:14px; line-height:1; }
+.u-tag-x:hover { color:#FC5027; }
+.u-drop { background:#fff; border:1px solid #ddd; border-radius:8px; margin-top:4px; box-shadow:0 4px 12px rgba(0,0,0,.1); overflow:hidden; }
+.u-opt { padding:9px 12px; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:8px; }
+.u-opt:hover { background:#fff8f6; }
+.sub-lbl { font-size:11px; font-weight:600; color:#888; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:5px; }
+
+/* LEVEL SECTION */
+.lv-section { border:1px solid #e8eaed; border-radius:10px; margin-bottom:12px; overflow:hidden; }
+.lv-head { background:#fafafa; padding:10px 14px; display:flex; align-items:center; justify-content:space-between; font-size:13px; font-weight:600; color:#444; border-bottom:1px solid #e8eaed; }
+.lv-tag { font-size:10px; font-weight:600; background:#f0f0f0; color:#666; padding:2px 8px; border-radius:12px; }
+.lv-body { padding:12px 14px; display:flex; flex-direction:column; gap:10px; }
+
+/* CONFIGURE */
+.set-row { display:flex; align-items:center; justify-content:space-between; padding:13px 0; border-bottom:1px solid #f0f2f5; }
+.set-row:last-child { border-bottom:none; }
+.set-lbl { font-size:13px; font-weight:500; color:#333; }
+.set-desc { font-size:11px; color:#888; margin-top:2px; }
+.pills { display:flex; gap:4px; }
+.pill { padding:5px 16px; border-radius:6px; border:1px solid #ddd; font-size:12px; font-weight:600; cursor:pointer; background:#fff; color:#aaa; transition:all .15s; }
+.pill.on.active { background:#e8f5e9; border-color:#4caf50; color:#2e7d32; }
+.pill.off.active { background:#fdecea; border-color:#ef5350; color:#c62828; }
+
+/* BUTTONS */
+.btn { padding:8px 20px; border-radius:8px; font-size:13px; font-weight:500; cursor:pointer; border:none; }
+.btn-primary { background:#FC5027; color:#fff; }
+.btn-primary:hover { background:#e03d16; }
+.btn-primary:disabled { background:#ffc5b4; cursor:not-allowed; }
+.btn-secondary { background:#fff; border:1px solid #ddd; color:#444; cursor:pointer; }
+.btn-secondary:hover { border-color:#aaa; }
+.btn-outline { background:#fff; border:1px solid #FC5027; color:#FC5027; cursor:pointer; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:500; }
+.btn-outline:hover { background:#fff0ec; }
+
+/* MODAL */
+.modal-ov { position:fixed; inset:0; background:rgba(0,0,0,.42); z-index:500; display:none; align-items:center; justify-content:center; }
+.modal-ov.show { display:flex; }
+.modal-box { background:#fff; border-radius:14px; padding:28px; max-width:440px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+.modal-icon { width:48px; height:48px; background:#fff3f0; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:14px; }
+.modal-title { font-size:16px; font-weight:600; margin-bottom:8px; }
+.modal-msg { font-size:13px; color:#555; line-height:1.6; margin-bottom:20px; }
+.modal-acts { display:flex; gap:10px; justify-content:flex-end; }
+
+/* GO LIVE FLOW */
+.flow-modal { background:#fff; border-radius:14px; max-width:590px; width:95%; max-height:90vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+.flow-head { padding:18px 24px 14px; border-bottom:1px solid #e8eaed; }
+.step-ind { display:flex; align-items:center; margin-bottom:12px; gap:0; }
+.s-item { display:flex; align-items:center; }
+.s-dot { width:22px; height:22px; border-radius:50%; border:2px solid #ddd; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#bbb; background:#fff; flex-shrink:0; }
+.s-item.act .s-dot { border-color:#FC5027; color:#FC5027; }
+.s-item.done .s-dot { border-color:#4caf50; background:#4caf50; color:#fff; }
+.s-line { width:24px; height:1px; background:#e8eaed; }
+.flow-title { font-size:15px; font-weight:600; }
+.flow-sub { font-size:12px; color:#888; margin-top:3px; }
+.flow-body { padding:18px 24px; flex:1; overflow-y:auto; }
+.flow-foot { padding:14px 24px; border-top:1px solid #e8eaed; display:flex; justify-content:space-between; align-items:center; }
+
+/* CHOICE CARDS */
+.choice-card { border:2px solid #e8eaed; border-radius:12px; padding:16px 18px; cursor:pointer; transition:all .15s; margin-bottom:10px; display:flex; align-items:flex-start; gap:14px; }
+.choice-card:hover { border-color:#FC5027; background:#fff8f6; }
+.choice-card.sel { border-color:#FC5027; background:#fff3f0; }
+.ch-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.ch-title { font-size:13px; font-weight:600; color:#1a1a2e; }
+.ch-desc { font-size:12px; color:#888; margin-top:3px; line-height:1.5; }
+
+/* MISSING TABLE */
+.m-table { width:100%; border-collapse:collapse; }
+.m-table th { font-size:11px; font-weight:600; color:#888; text-transform:uppercase; padding:8px 10px; text-align:left; border-bottom:1px solid #e8eaed; }
+.m-table td { padding:10px 10px; font-size:13px; border-bottom:1px solid #f5f5f5; vertical-align:middle; }
+.m-table tr:last-child td { border-bottom:none; }
+.warn-chip { background:#fff3e0; color:#e65100; font-size:11px; font-weight:600; padding:3px 8px; border-radius:5px; display:inline-block; }
+.ok-chip { background:#e8f5e9; color:#2e7d32; font-size:11px; font-weight:600; padding:3px 8px; border-radius:5px; display:inline-block; }
+
+/* NEXT PROMPT */
+.np { background:#fff8f6; border:1px solid #ffd5c8; border-radius:10px; padding:14px 16px; margin-top:16px; }
+.np.hidden { display:none; }
+.np-title { font-size:13px; font-weight:600; color:#FC5027; margin-bottom:8px; }
+.np-btns { display:flex; gap:8px; flex-wrap:wrap; }
+.np-btn { padding:6px 14px; border:1px solid #FC5027; color:#FC5027; border-radius:7px; font-size:12px; font-weight:500; cursor:pointer; background:#fff; }
+.np-btn:hover { background:#FC5027; color:#fff; }
+.np-dis { padding:6px 14px; border:1px solid #ddd; color:#888; border-radius:7px; font-size:12px; cursor:pointer; background:#fff; }
+
+/* TOAST */
+.toast { position:fixed; bottom:28px; right:28px; background:#1a1a2e; color:#fff; padding:13px 20px; border-radius:10px; font-size:13px; font-weight:500; z-index:9999; display:none; box-shadow:0 8px 24px rgba(0,0,0,.2); max-width:400px; line-height:1.5; border-left:4px solid #4caf50; }
+.toast.show { display:block; animation:su .3s ease; }
+@keyframes su { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+/* GO LIVE HUB */
+.gl-modal-inner { background:#fff; border-radius:16px; max-width:640px; width:95%; max-height:92vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 24px 64px rgba(0,0,0,.18); }
+.gl-head { padding:22px 24px 0; }
+.gl-head-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:18px; }
+.gl-title { font-size:17px; font-weight:700; color:#1a1a2e; }
+.gl-sub   { font-size:13px; color:#888; margin-top:3px; }
+.gl-close { background:none; border:none; cursor:pointer; color:#bbb; padding:4px; border-radius:4px; display:flex; }
+.gl-close:hover { color:#555; }
+
+/* STEP PILLS */
+.gl-steps { display:flex; align-items:center; gap:0; margin-bottom:20px; overflow-x:auto; padding-bottom:2px; }
+.gl-pill { display:flex; align-items:center; gap:6px; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:600; white-space:nowrap; border:1.5px solid #e8eaed; background:#fafafa; color:#aaa; cursor:default; transition:all .2s; }
+.gl-pill.pending  { border-color:#e8eaed; background:#fafafa; color:#aaa; }
+.gl-pill.active   { border-color:#FC5027; background:#fff3f0; color:#FC5027; }
+.gl-pill.done     { border-color:#4caf50; background:#e8f5e9; color:#2e7d32; }
+.gl-pill.optional.done { border-color:#9c27b0; background:#f3e5f5; color:#7b1fa2; }
+.gl-pill.optional { border-color:#e8eaed; background:#fafafa; color:#aaa; }
+.gl-pill-num { width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; background:currentColor; color:#fff; flex-shrink:0; }
+.gl-pill.done .gl-pill-num { background:#4caf50; color:#fff; }
+.gl-pill.active .gl-pill-num { background:#FC5027; color:#fff; }
+.gl-pill.optional .gl-pill-num { background:#9e9e9e; color:#fff; }
+.gl-pill.optional.done .gl-pill-num { background:#9c27b0; color:#fff; }
+.gl-pill-arrow { color:#ddd; font-size:14px; padding:0 4px; flex-shrink:0; }
+
+/* SUMMARY STATS — removed */
+/* WARN / OK NOTE — removed */
+
+/* ASSIGNMENT CARDS — match screenshot style exactly */
+.gl-cards { display:flex; flex-direction:column; gap:10px; margin-bottom:4px; }
+.gl-card { border:1.5px solid #e8eaed; border-radius:12px; padding:16px 18px; display:flex; align-items:center; gap:14px; background:#fff; transition:border-color .2s, background .2s; }
+.gl-card.card-warn { border-color:#ffd5c8; background:#fff8f6; }
+.gl-card.card-done { border-color:#c8e6c9; background:#f1f8e9; }
+.gl-card.card-opt  { border-color:#e8eaed; background:#fff; }
+.gl-card-icon { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.gl-card-body { flex:1; min-width:0; }
+.gl-card-title { font-size:14px; font-weight:700; color:#1a1a2e; }
+.gl-card-desc  { font-size:12px; color:#888; margin-top:2px; }
+.gl-card-status { font-size:12px; font-weight:600; margin-top:5px; }
+.gl-card-status.s-warn { color:#FC5027; }
+.gl-card-status.s-done { color:#2e7d32; }
+.gl-card-status.s-opt  { color:#9e9e9e; }
+.gl-card-action { flex-shrink:0; }
+.gl-btn-assign { padding:7px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; border:1.5px solid #FC5027; color:#FC5027; background:#fff; transition:all .15s; }
+.gl-btn-assign:hover { background:#FC5027; color:#fff; }
+.gl-btn-done   { padding:7px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:default; border:1.5px solid #c8e6c9; color:#2e7d32; background:#e8f5e9; }
+.gl-btn-opt    { padding:7px 16px; border-radius:8px; font-size:13px; font-weight:500; cursor:pointer; border:1.5px solid #ddd; color:#555; background:#fff; }
+.gl-btn-opt:hover { border-color:#aaa; }
+
+/* FOOTER */
+.gl-foot { padding:16px 24px; border-top:1px solid #e8eaed; display:flex; justify-content:flex-end; gap:10px; align-items:center; background:#fff; }
+.gl-body { padding:20px 24px 16px; flex:1; overflow-y:auto; }
+
+.hidden { display:none !important; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="topnav">
+  <div class="logo">digiQC</div>
+  <div class="nav-links">
+    <a href="#" class="active">Projects</a><a href="#">Setup</a><a href="#">Logs</a>
+    <a href="#">Dashboard</a><a href="#">Reports</a>
+    <a href="#">To Do <span style="background:#FC5027;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px">1</span></a>
+  </div>
+</div>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="breadcrumb" style="padding:10px 24px 0">
+    <span>📁</span><span>›</span><strong>MVP</strong>
+    <span style="color:#bbb">Asia/Kolkata</span>
+    <span class="proj-badge">Project Access</span>
+    <div style="margin-left:auto;display:flex;gap:10px;align-items:center">
+      <select class="filter-sel" style="padding:5px 10px;font-size:12px"><option>Select Your Teams</option><option>Best Construction</option></select>
+      <button style="background:none;border:1px solid #ddd;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer">My Activities</button>
+      <button style="background:#FC5027;color:#fff;border:none;border-radius:7px;padding:5px 14px;font-size:12px;cursor:pointer">⚙ Setting</button>
+    </div>
+  </div>
+  <div class="tab-row" style="padding:0 24px">
+    <div class="tab">Eqc</div><div class="tab">Issue</div><div class="tab">Register</div>
+    <div class="tab active">Checklists</div><div class="tab">User</div><div class="tab">Teams</div>
+    <div class="tab">Target</div><div class="tab">Nomenclature</div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+  <div class="section-header">
+    <div><div class="section-title">Checklists</div><div class="section-sub" id="clCount">77 Checklists</div></div>
+    <div class="header-actions">
+      <select class="filter-sel" id="statusFilter" onchange="render()">
+        <option value="">Status: All</option><option value="Live">Live</option>
+        <option value="Draft">Draft</option><option value="Archived">Archived</option>
+      </select>
+      <input class="search-box" placeholder="Search" id="searchInp" oninput="render()"/>
+      <button class="btn-add">⊕ Add</button>
+    </div>
+  </div>
+
+  <!-- BULK TOOLBAR -->
+  <div class="bulk-toolbar hidden" id="bulkBar">
+    <span class="bulk-count" id="bulkCnt">0 selected</span>
+    <span class="bulk-sep">|</span>
+
+    <div class="dd">
+      <button class="bulk-btn" onclick="toggleDD('assignDD')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        Assign Users ▾
+      </button>
+      <div class="dd-menu" id="assignDD">
+        <div class="dm-item" onclick="openDrawer('cu')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+          Assign Checklist Users
+        </div>
+        <div class="dm-item" onclick="openDrawer('rfi')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+          Assign RFI Users
+        </div>
+        <div class="dm-item" onclick="openDrawer('appr')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Assign Approver
+        </div>
+      </div>
+    </div>
+
+    <!-- CONFIGURE — no dropdown -->
+    <button class="bulk-btn" onclick="openDrawer('cfg')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+      Configure
+    </button>
+
+    <div class="dd">
+      <button class="bulk-btn" onclick="toggleDD('statusDD')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Status ▾
+      </button>
+      <div class="dd-menu" id="statusDD">
+        <div class="dm-item" style="color:#2e7d32" onclick="triggerStatus('golive')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Go Live
+        </div>
+        <div class="dm-div"></div>
+        <div class="dm-item" style="color:#e65100" onclick="triggerStatus('archive')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/></svg> Archive
+        </div>
+        <div class="dm-item" onclick="triggerStatus('unarchive')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 8 3 21 21 21 21 8"/><rect x="1" y="3" width="22" height="5"/><line x1="9" y1="12" x2="15" y2="12"/></svg> Unarchive
+        </div>
+      </div>
+    </div>
+
+    <span class="clear-sel" onclick="clearSel()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Clear
+    </span>
+  </div>
+
+  <div class="qs-banner" id="qsBanner">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FC5027" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span id="qsMsg">Page selected.</span>
+    <button class="qs-btn" onclick="qsPage()">This page only</button>
+    <button class="qs-btn" onclick="qsAll()">All 77 checklists</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th style="width:40px"><input type="checkbox" class="cb" id="hdrCb" onclick="toggleAll(this)"/></th>
+        <th>#</th><th>Checklist</th><th>Assigned User (Checklist)</th>
+        <th>Assigned User (RFI)</th><th>Assigned Team</th>
+        <th>Status <span style="cursor:pointer;color:#aaa">⇅</span></th><th></th>
+      </tr></thead>
+      <tbody id="tBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════════════════ DRAWERS ════════════════ -->
+<div class="dr-overlay" id="drOv" onclick="closeDrawer()"></div>
+
+<!-- ASSIGN CHECKLIST USERS -->
+<div class="drawer" id="dr-cu">
+  <div class="dr-head">
+    <div class="dr-title" id="cuTitle">Assign Checklist Users (0 Selected)</div>
+    <button class="dr-close" onclick="closeDrawer()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="dr-body">
+    <div class="ar-tabs">
+      <button class="ar-tab active" id="cuTA" onclick="arTab('cu','a')">Assign</button>
+      <button class="ar-tab" id="cuTR" onclick="arTab('cu','r')">Remove</button>
+    </div>
+    <div class="info-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Only the current changes will be applied. All other assignments and configurations will remain unchanged.
+    </div>
+    <div id="cuA">
+      <div class="sub-lbl">Project Users</div>
+      <div class="us-wrap" id="cuAW" onclick="openPicker('cuAW','cuAD','proj')"><input placeholder="Search and select users…" id="cuAI" oninput="filterPick(this,'cuAD','proj')" onclick="event.stopPropagation()"/></div>
+      <div class="u-drop hidden" id="cuAD"></div>
+    </div>
+    <div id="cuR" class="hidden">
+      <p style="font-size:12px;color:#888;margin-bottom:10px">Select users to remove from all stages of the selected checklists.</p>
+      <div class="rm-list" id="cuRL"></div>
+    </div>
+    <div class="np hidden" id="cuNP">
+      <div class="np-title">✓ Applied! Do you also want to set:</div>
+      <div class="np-btns">
+        <button class="np-btn" onclick="closeDrawer();openDrawer('rfi')">Assign RFI Users</button>
+        <button class="np-btn" onclick="closeDrawer();openDrawer('appr')">Assign Approver</button>
+        <button class="np-dis" onclick="this.closest('.np').classList.add('hidden')">Dismiss</button>
+      </div>
+    </div>
+  </div>
+  <div class="dr-foot">
+    <button class="btn btn-secondary" onclick="closeDrawer()">Cancel</button>
+    <button class="btn btn-primary" id="cuSave" disabled onclick="doConfirm('cu')">Save</button>
+  </div>
+</div>
+
+<!-- ASSIGN RFI USERS -->
+<div class="drawer" id="dr-rfi">
+  <div class="dr-head">
+    <div class="dr-title" id="rfiTitle">Assign RFI Users (0 Selected)</div>
+    <button class="dr-close" onclick="closeDrawer()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="dr-body">
+    <div class="ar-tabs">
+      <button class="ar-tab active" id="rfiTA" onclick="arTab('rfi','a')">Assign</button>
+      <button class="ar-tab" id="rfiTR" onclick="arTab('rfi','r')">Remove</button>
+    </div>
+    <div class="info-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Only checklists with RFI stages are affected. Checklists without RFI stages will be skipped.
+    </div>
+    <div id="rfiA">
+      <div class="sub-lbl">Project Users</div>
+      <div class="us-wrap" id="rfiAW" onclick="openPicker('rfiAW','rfiAD','proj')"><input placeholder="Search and select users…" id="rfiAI" oninput="filterPick(this,'rfiAD','proj')" onclick="event.stopPropagation()"/></div>
+      <div class="u-drop hidden" id="rfiAD"></div>
+    </div>
+    <div id="rfiR" class="hidden">
+      <p style="font-size:12px;color:#888;margin-bottom:10px">Select users to remove from all RFI stages of the selected checklists.</p>
+      <div class="rm-list" id="rfiRL"></div>
+    </div>
+  </div>
+  <div class="dr-foot">
+    <button class="btn btn-secondary" onclick="closeDrawer()">Cancel</button>
+    <button class="btn btn-primary" id="rfiSave" disabled onclick="doConfirm('rfi')">Save</button>
+  </div>
+</div>
+
+<!-- ASSIGN APPROVER -->
+<div class="drawer" id="dr-appr">
+  <div class="dr-head">
+    <div class="dr-title" id="apprTitle">Assign Approver (0 Selected)</div>
+    <button class="dr-close" onclick="closeDrawer()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="dr-body">
+    <div class="ar-tabs">
+      <button class="ar-tab active" id="apprTA" onclick="arTab('appr','a')">Assign</button>
+      <button class="ar-tab" id="apprTR" onclick="arTab('appr','r')">Remove</button>
+    </div>
+    <div class="info-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Leave a level empty to keep existing approvers for that level unchanged.
+    </div>
+    <div id="apprA">
+      <div class="lv-section">
+        <div class="lv-head">Level 1 <span class="lv-tag">Primary</span></div>
+        <div class="lv-body">
+          <div><div class="sub-lbl">Internal (Project Users)</div>
+            <div class="us-wrap" id="l1IW" onclick="openPicker('l1IW','l1ID','proj')"><input placeholder="Search project users…" id="l1II" oninput="filterPick(this,'l1ID','proj')" onclick="event.stopPropagation()"/></div>
+            <div class="u-drop hidden" id="l1ID"></div>
+          </div>
+          <div><div class="sub-lbl">External (Org Users)</div>
+            <div class="us-wrap" id="l1EW" onclick="openPicker('l1EW','l1ED','org')"><input placeholder="Search org users…" id="l1EI" oninput="filterPick(this,'l1ED','org')" onclick="event.stopPropagation()"/></div>
+            <div class="u-drop hidden" id="l1ED"></div>
+          </div>
+        </div>
+      </div>
+      <div class="lv-section">
+        <div class="lv-head">Level 2 <span class="lv-tag">Optional</span></div>
+        <div class="lv-body">
+          <div><div class="sub-lbl">Internal (Project Users)</div>
+            <div class="us-wrap" id="l2IW" onclick="openPicker('l2IW','l2ID','proj')"><input placeholder="Search project users…" id="l2II" oninput="filterPick(this,'l2ID','proj')" onclick="event.stopPropagation()"/></div>
+            <div class="u-drop hidden" id="l2ID"></div>
+          </div>
+          <div><div class="sub-lbl">External (Org Users)</div>
+            <div class="us-wrap" id="l2EW" onclick="openPicker('l2EW','l2ED','org')"><input placeholder="Search org users…" id="l2EI" oninput="filterPick(this,'l2ED','org')" onclick="event.stopPropagation()"/></div>
+            <div class="u-drop hidden" id="l2ED"></div>
+          </div>
+        </div>
+      </div>
+      <div class="lv-section">
+        <div class="lv-head">Level 3 <span class="lv-tag">Optional</span></div>
+        <div class="lv-body">
+          <div><div class="sub-lbl">Internal (Project Users)</div>
+            <div class="us-wrap" id="l3IW" onclick="openPicker('l3IW','l3ID','proj')"><input placeholder="Search project users…" id="l3II" oninput="filterPick(this,'l3ID','proj')" onclick="event.stopPropagation()"/></div>
+            <div class="u-drop hidden" id="l3ID"></div>
+          </div>
+          <div><div class="sub-lbl">External (Org Users)</div>
+            <div class="us-wrap" id="l3EW" onclick="openPicker('l3EW','l3ED','org')"><input placeholder="Search org users…" id="l3EI" oninput="filterPick(this,'l3ED','org')" onclick="event.stopPropagation()"/></div>
+            <div class="u-drop hidden" id="l3ED"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="apprR" class="hidden">
+      <p style="font-size:12px;color:#888;margin-bottom:10px">Select approvers to remove across all levels and stages of the selected checklists.</p>
+      <div class="rm-list" id="apprRL"></div>
+    </div>
+  </div>
+  <div class="dr-foot">
+    <button class="btn btn-secondary" onclick="closeDrawer()">Cancel</button>
+    <button class="btn btn-primary" id="apprSave" disabled onclick="doConfirm('appr')">Save</button>
+  </div>
+</div>
+
+<!-- CONFIGURE — direct, no dropdown -->
+<div class="drawer" id="dr-cfg">
+  <div class="dr-head">
+    <div class="dr-title" id="cfgTitle">Configure Checklist Stage Settings (0 Selected)</div>
+    <button class="dr-close" onclick="closeDrawer()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="dr-body">
+    <div class="info-banner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Only settings you explicitly set to ON or OFF will be applied. Unselected settings remain unchanged.
+    </div>
+    <div class="set-row">
+      <div><div class="set-lbl">Drawing Required</div><div class="set-desc">Attach drawing before stage submission</div></div>
+      <div class="pills"><button class="pill on" onclick="setPill(this,'cfgSave')">ON</button><button class="pill off" onclick="setPill(this,'cfgSave')">OFF</button></div>
+    </div>
+    <div class="set-row">
+      <div><div class="set-lbl">Witness Required</div><div class="set-desc">Witness sign-off mandatory on this stage</div></div>
+      <div class="pills"><button class="pill on" onclick="setPill(this,'cfgSave')">ON</button><button class="pill off" onclick="setPill(this,'cfgSave')">OFF</button></div>
+    </div>
+    <div class="set-row">
+      <div><div class="set-lbl">Allow Skip</div><div class="set-desc">Stage can be skipped by the executor</div></div>
+      <div class="pills"><button class="pill on" onclick="setPill(this,'cfgSave')">ON</button><button class="pill off" onclick="setPill(this,'cfgSave')">OFF</button></div>
+    </div>
+    <div class="set-row">
+      <div><div class="set-lbl">Require Validate</div><div class="set-desc">Validation step required before approval</div></div>
+      <div class="pills"><button class="pill on" onclick="setPill(this,'cfgSave')">ON</button><button class="pill off" onclick="setPill(this,'cfgSave')">OFF</button></div>
+    </div>
+    <div style="margin-top:14px;padding:10px 12px;background:#f9f9f9;border-radius:8px;border:1px solid #eee;font-size:12px;color:#888">
+      <strong style="color:#555;display:block;margin-bottom:3px">ℹ RFI Allowed is not configurable here</strong>
+      RFI Allowed is a project-level setting. Update it in Project Settings.
+    </div>
+  </div>
+  <div class="dr-foot">
+    <button class="btn btn-secondary" onclick="closeDrawer()">Cancel</button>
+    <button class="btn btn-primary" id="cfgSave" disabled onclick="doConfirm('cfg')">Apply</button>
+  </div>
+</div>
+
+<!-- ════════════════ CONFIRM MODAL ════════════════ -->
+<div class="modal-ov" id="confMod">
+  <div class="modal-box">
+    <div class="modal-icon" id="confIcon"></div>
+    <div class="modal-title" id="confTitle">Confirm</div>
+    <div class="modal-msg" id="confMsg"></div>
+    <div class="modal-acts">
+      <button class="btn btn-secondary" onclick="closeMod('confMod')">Cancel</button>
+      <button class="btn btn-primary" id="confBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-ov" id="statMod">
+  <div class="modal-box">
+    <div class="modal-icon" id="statIcon"></div>
+    <div class="modal-title" id="statTitle">Confirm</div>
+    <div class="modal-msg" id="statMsg"></div>
+    <div class="modal-acts">
+      <button class="btn btn-secondary" onclick="closeMod('statMod')">Cancel</button>
+      <button class="btn btn-primary" id="statBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- GO LIVE HUB MODAL -->
+<div class="modal-ov" id="glMod">
+  <div class="gl-modal-inner">
+    <div class="gl-head">
+      <div class="gl-head-top">
+        <div>
+          <div class="gl-title">Go Live</div>
+          <div class="gl-sub" id="glSub"></div>
+        </div>
+        <button class="gl-close" onclick="closeMod('glMod')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <!-- STEP PILLS -->
+      <div class="gl-steps" id="glSteps"></div>
+    </div>
+    <div class="gl-body" id="glBody"></div>
+    <div class="gl-foot">
+      <button class="btn btn-secondary" onclick="closeMod('glMod')">Cancel</button>
+      <button class="btn btn-primary" id="glGoLiveBtn" onclick="glConfirmGoLive()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display:inline;margin-right:5px;vertical-align:middle"><path d="M5 13l4 4L19 7"/></svg>
+        Go Live
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── DATA ───
+const PROJ = [
+  {id:1,name:'Ashish Sharma',   init:'AS', ext:false},
+  {id:2,name:'Jigar Hathiwala', init:'JH', ext:false},
+  {id:3,name:'Mehul Patel',     init:'MP', ext:false},
+  {id:4,name:'Priya Singh',     init:'PS', ext:false},
+  {id:5,name:'Amit Yadav',      init:'AY', ext:false},
+  {id:6,name:'Rajesh Kumar',    init:'RK', ext:false},
+  {id:7,name:'Farhan Sheikh',   init:'FS', ext:false},
+];
+const ORG_ONLY = [
+  {id:8, name:'Vinod Contractors',  init:'VC', ext:true},
+  {id:9, name:'Kiran Builders Ltd', init:'KB', ext:true},
+  {id:10,name:'Anand Associates',   init:'AA', ext:true},
+];
+const ORG = [...PROJ, ...ORG_ONLY];
+
+const CLS = [
+  {id:1, name:'Executive Feedback & Rating', users:['Ashish Sharma','Jigar Hathiwala'], rfi:[], team:'Testing',              status:'Live',     hasRfi:false},
+  {id:2, name:'Piling',                      users:['Ashish Sharma','Mehul Patel'],     rfi:[],                  team:'Best Construction', status:'Live',     hasRfi:true },
+  {id:3, name:'Piling Duplicate',            users:[],                                  rfi:[],                  team:'',                  status:'Draft',    hasRfi:false},
+  {id:4, name:'Civil — PCC Work',            users:['Ashish Sharma'],                   rfi:['Jigar Hathiwala'], team:'EssAct In-house',   status:'Live',     hasRfi:true },
+  {id:5, name:'MS Sheet Roofing',            users:[],                                  rfi:[],                  team:'',                  status:'Draft',    hasRfi:false},
+  {id:6, name:'PCC Work',                    users:[],                                  rfi:[],                  team:'',                  status:'Draft',    hasRfi:false},
+  {id:7, name:'Project Details',             users:['Ashish Sharma','Rajesh Kumar'],    rfi:[],                  team:'Best Construction', status:'Live',     hasRfi:false},
+  {id:8, name:'Brickwork Masonry',           users:['Rajesh Kumar'],                    rfi:['Amit Yadav'],      team:'Best Construction', status:'Live',     hasRfi:true },
+  {id:9, name:'Waterproofing Terrace',       users:[],                                  rfi:[],                  team:'',                  status:'Archived', hasRfi:false},
+  {id:10,name:'Electrical Wiring',           users:['Mehul Patel'],                     rfi:['Jigar Hathiwala'], team:'EssAct In-house',   status:'Archived', hasRfi:true },
+  {id:11,name:'Plumbing Rough-in',           users:[],                                  rfi:[],                  team:'',                  status:'Draft',    hasRfi:false},
+  {id:12,name:'Foundation Inspection',       users:['Ashish Sharma','Priya Singh'],     rfi:['Jigar Hathiwala'], team:'Testing',            status:'Live',     hasRfi:true },
+];
+
+let sel = new Set(), allPages = false;
+const tags = {};
+const rmChk = {};
+
+// ─── RENDER ───
+function render() {
+  const sv = document.getElementById('statusFilter').value;
+  const q  = document.getElementById('searchInp').value.toLowerCase();
+  const d  = CLS.filter(c => (!sv||c.status===sv) && (!q||c.name.toLowerCase().includes(q)));
+  const tb = document.getElementById('tBody');
+  tb.innerHTML = d.map((c,i) => {
+    const ul = c.users.length ? c.users[0]+(c.users.length>1?` and +${c.users.length-1}`:'') : '—';
+    const rl = c.rfi.length   ? c.rfi[0]  +(c.rfi.length>1?  ` and +${c.rfi.length-1}`:'')   : '—';
+    const tl = c.team || '—';
+    return `<tr class="${sel.has(c.id)?'selected':''}" id="row${c.id}">
+      <td><input type="checkbox" class="cb" ${sel.has(c.id)?'checked':''} onclick="toggleRow(${c.id},this)"/></td>
+      <td style="color:#aaa;font-size:12px">${i+1}</td>
+      <td class="cl-name">${c.name}</td>
+      <td>${ul==='—'?'<span class="dash">—</span>':`<span class="user-chip">${ul}</span>`}</td>
+      <td>${rl==='—'?'<span class="dash">—</span>':`<span class="user-chip">${rl}</span>`}</td>
+      <td style="font-size:12px;color:#555">${tl==='—'?'<span class="dash">—</span>':tl}</td>
+      <td><span class="badge badge-${c.status.toLowerCase()}">${c.status}</span></td>
+      <td><div class="row-acts">
+        ${c.status==='Draft'?`<button class="ra-btn" title="Assign" onclick="quickAssign(${c.id})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></button>`:''}
+        <button class="ra-btn" title="Duplicate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+        ${c.status==='Draft'?`<button class="ra-btn" title="Delete" style="color:#ef5350"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg></button>`:''}
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── SELECTION ───
+function toggleRow(id,cb) {
+  if(cb.checked) sel.add(id); else sel.delete(id);
+  allPages = false;
+  document.getElementById('row'+id).classList.toggle('selected',cb.checked);
+  updateBar(); syncHdr();
+}
+function toggleAll(hcb) {
+  const ids = visIds();
+  if(hcb.checked) {
+    ids.forEach(id=>sel.add(id));
+    if(CLS.length>8){ document.getElementById('qsBanner').classList.add('show'); document.getElementById('qsMsg').textContent=`${ids.length} on this page selected.`; }
+  } else {
+    ids.forEach(id=>sel.delete(id)); allPages=false;
+    document.getElementById('qsBanner').classList.remove('show');
+  }
+  render(); updateBar();
+}
+function qsPage() { allPages=false; document.getElementById('qsBanner').classList.remove('show'); updateBar(); }
+function qsAll()  { CLS.forEach(c=>sel.add(c.id)); allPages=true; document.getElementById('qsBanner').classList.remove('show'); updateBar(); render(); }
+function clearSel(){ sel.clear(); allPages=false; document.getElementById('hdrCb').checked=false; document.getElementById('hdrCb').indeterminate=false; document.getElementById('qsBanner').classList.remove('show'); render(); updateBar(); }
+function syncHdr(){ const ids=visIds(); const n=ids.filter(id=>sel.has(id)).length; const hcb=document.getElementById('hdrCb'); hcb.checked=n===ids.length&&ids.length>0; hcb.indeterminate=n>0&&n<ids.length; }
+function visIds(){ const sv=document.getElementById('statusFilter').value; const q=document.getElementById('searchInp').value.toLowerCase(); return CLS.filter(c=>(!sv||c.status===sv)&&(!q||c.name.toLowerCase().includes(q))).map(c=>c.id); }
+function n(){ return allPages?CLS.length:sel.size; }
+
+function updateBar(){
+  const cnt=n();
+  document.getElementById('bulkBar').classList.toggle('hidden',cnt===0);
+  document.getElementById('bulkCnt').textContent=`${cnt} selected`;
+  [['cuTitle','Assign Checklist Users'],['rfiTitle','Assign RFI Users'],['apprTitle','Assign Approver'],['cfgTitle','Configure Checklist Stage Settings']]
+    .forEach(([id,lbl])=>{ const e=document.getElementById(id); if(e) e.textContent=`${lbl} (${cnt} Checklists Selected)`; });
+}
+
+// ─── DROPDOWNS ───
+function toggleDD(id){ document.querySelectorAll('.dd-menu').forEach(m=>{if(m.id!==id)m.classList.remove('show');}); document.getElementById(id).classList.toggle('show'); }
+document.addEventListener('click',e=>{ if(!e.target.closest('.dd')) document.querySelectorAll('.dd-menu').forEach(m=>m.classList.remove('show')); });
+
+// ─── DRAWERS ───
+function openDrawer(name){
+  document.querySelectorAll('.dd-menu').forEach(m=>m.classList.remove('show'));
+  document.querySelectorAll('.drawer').forEach(d=>d.classList.remove('open'));
+  const d=document.getElementById('dr-'+name); if(!d) return;
+  d.classList.add('open');
+  document.getElementById('drOv').classList.add('show');
+  if(name==='cfg'){ d.querySelectorAll('.pill').forEach(p=>p.classList.remove('active')); document.getElementById('cfgSave').disabled=true; }
+  if(name==='cu')   buildRmList('cuRL',  PROJ, 'cu');
+  if(name==='rfi')  buildRmList('rfiRL', PROJ, 'rfi');
+  if(name==='appr') buildRmList('apprRL',ORG,  'appr');
+}
+function closeDrawer(){ document.querySelectorAll('.drawer').forEach(d=>d.classList.remove('open')); document.getElementById('drOv').classList.remove('show'); }
+
+// ─── ASSIGN / REMOVE TABS ───
+function arTab(p, tab){
+  const aT=document.getElementById(p+'TA'), rT=document.getElementById(p+'TR');
+  const aC=document.getElementById(p+'A'), rC=document.getElementById(p+'R');
+  if(tab==='a'){ aC.classList.remove('hidden'); rC.classList.add('hidden'); aT.classList.add('active'); rT.classList.remove('active'); }
+  else         { rC.classList.remove('hidden'); aC.classList.add('hidden'); rT.classList.add('active'); aT.classList.remove('active'); }
+  chkSave(p);
+}
+
+// ─── REMOVE LIST (shows all assigned users) ───
+function buildRmList(listId, pool, p){
+  rmChk[listId]=new Set();
+  const el=document.getElementById(listId); if(!el) return;
+  el.innerHTML=`<div class="rm-list-head">Select users to remove</div>`+
+    pool.map(u=>`<div class="rm-row">
+      <div class="rm-row-left">
+        <div class="avatar ${u.ext?'av-ext':'av-proj'}">${u.init}</div>
+        <div><div class="rm-name">${u.name}</div><div class="rm-type">${u.ext?'External · Org user':'Project user'}</div></div>
+      </div>
+      <input type="checkbox" class="rm-cb" data-uid="${u.id}" data-list="${listId}" data-p="${p}" onchange="toggleRm(this)"/>
+    </div>`).join('');
+}
+function toggleRm(cb){
+  const lid=cb.dataset.list, p=cb.dataset.p;
+  if(!rmChk[lid]) rmChk[lid]=new Set();
+  if(cb.checked) rmChk[lid].add(+cb.dataset.uid); else rmChk[lid].delete(+cb.dataset.uid);
+  chkSave(p);
+}
+
+// ─── CHECK SAVE BTN ───
+function chkSave(p){
+  const btn=document.getElementById(p==='cfg'?'cfgSave':p+'Save'); if(!btn) return;
+  const aTab=document.getElementById(p+'TA');
+  const isAssign=aTab&&aTab.classList.contains('active');
+  if(p==='cfg'){ btn.disabled=!document.querySelector('#dr-cfg .pill.active'); return; }
+  if(isAssign){
+    const wraps={cu:['cuAW'],rfi:['rfiAW'],appr:['l1IW','l1EW','l2IW','l2EW','l3IW','l3EW']};
+    btn.disabled=!(wraps[p]||[]).some(w=>(tags[w]||[]).length>0);
+  } else {
+    const lids={cu:'cuRL',rfi:'rfiRL',appr:'apprRL'};
+    btn.disabled=!(rmChk[lids[p]]||new Set()).size;
+  }
+}
+
+// ─── USER PICKER ───
+function openPicker(wId,dId,pool){ renderDrop(wId,dId,pool==='proj'?PROJ:ORG,''); document.getElementById(dId).classList.remove('hidden'); }
+function filterPick(inp,dId,pool){ const wId=inp.closest('.us-wrap').id; renderDrop(wId,dId,pool==='proj'?PROJ:ORG,inp.value.toLowerCase()); document.getElementById(dId).classList.remove('hidden'); }
+function renderDrop(wId,dId,pool,q){
+  const ex=(tags[wId]||[]).map(u=>u.id);
+  const list=pool.filter(u=>u.name.toLowerCase().includes(q)&&!ex.includes(u.id));
+  document.getElementById(dId).innerHTML=list.length
+    ?list.map(u=>`<div class="u-opt" onclick="pickU('${wId}','${dId}',${u.id})"><div class="avatar ${u.ext?'av-ext':'av-proj'}">${u.init}</div>${u.name}</div>`).join('')
+    :`<div class="u-opt" style="color:#bbb;cursor:default">No users found</div>`;
+}
+function pickU(wId,dId,uid){
+  const all=[...PROJ,...ORG_ONLY]; const u=all.find(x=>x.id===uid); if(!u) return;
+  if(!tags[wId]) tags[wId]=[];
+  tags[wId].push(u);
+  renderTags(wId);
+  document.getElementById(dId).classList.add('hidden');
+  chkSave(wPfx(wId));
+}
+function removeTag(wId,uid){
+  tags[wId]=(tags[wId]||[]).filter(u=>u.id!==uid);
+  renderTags(wId);
+  chkSave(wPfx(wId));
+}
+function renderTags(wId){
+  const wrap=document.getElementById(wId); const inp=wrap.querySelector('input');
+  wrap.querySelectorAll('.u-tag').forEach(t=>t.remove());
+  (tags[wId]||[]).forEach(u=>{ const t=document.createElement('span'); t.className='u-tag'; t.innerHTML=`${u.name}<span class="u-tag-x" onclick="removeTag('${wId}',${u.id})">×</span>`; inp.before(t); });
+}
+function wPfx(w){ if(w.startsWith('cu')) return 'cu'; if(w.startsWith('rfi')) return 'rfi'; if(w.startsWith('l1')||w.startsWith('l2')||w.startsWith('l3')) return 'appr'; return ''; }
+document.addEventListener('click',e=>{ if(!e.target.closest('.us-wrap')&&!e.target.closest('.u-drop')) document.querySelectorAll('.u-drop').forEach(d=>d.classList.add('hidden')); });
+
+// ─── CONFIGURE PILLS ───
+function setPill(btn,saveId){ btn.closest('.pills').querySelectorAll('.pill').forEach(p=>p.classList.remove('active')); btn.classList.add('active'); document.getElementById(saveId).disabled=!document.querySelector('#dr-cfg .pill.active'); }
+
+// ─── CONFIRM ───
+function doConfirm(p){
+  const cnt=n();
+  const cfg={
+    cu:  {icon:'user',  title:'Update Checklist User Assignments?', msg:`Update Checklist User assignments for <strong>${cnt} checklists</strong>? This will affect all stages.`},
+    rfi: {icon:'chat',  title:'Update RFI User Assignments?',       msg:`Update RFI User assignments for <strong>${cnt} checklists</strong>? Checklists without RFI stages will be skipped.`},
+    appr:{icon:'check', title:'Update Approver Assignments?',       msg:`Update Approver assignments for <strong>${cnt} checklists</strong>? All applicable stages will be updated.`},
+    cfg: {icon:'cog',   title:'Apply Stage Settings?',             msg:`Apply Checklist stage settings to <strong>${cnt} checklists</strong>? Only selected toggles will change.`},
+  }[p];
+  document.getElementById('confIcon').innerHTML=makeIcon(cfg.icon);
+  document.getElementById('confTitle').textContent=cfg.title;
+  document.getElementById('confMsg').innerHTML=cfg.msg;
+  document.getElementById('confBtn').onclick=()=>applyAction(p);
+  document.getElementById('confMod').classList.add('show');
+}
+function applyAction(p){
+  closeMod('confMod');
+  const cnt=n();
+  let msg='';
+  if(p==='rfi'){ const sk=[...sel].filter(id=>!CLS.find(c=>c.id===id)?.hasRfi).length; msg=`✓ RFI User assignments updated for ${cnt-sk} checklists | Skipped: ${sk} (no RFI stages)`; }
+  else if(p==='cu') msg=`✓ Checklist User assignments updated for ${cnt} checklists`;
+  else if(p==='appr') msg=`✓ Approver assignments updated for ${cnt} checklists`;
+  else msg=`✓ Stage settings updated for ${cnt} checklists`;
+  closeDrawer();
+  toast(msg);
+  if(p==='cu') setTimeout(()=>{ openDrawer('cu'); document.getElementById('cuNP').classList.remove('hidden'); },400);
+}
+function closeMod(id){ document.getElementById(id).classList.remove('show'); }
+
+function makeIcon(t){
+  const c={user:'#FC5027',chat:'#FC5027',check:'#FC5027',cog:'#FC5027',live:'#2e7d32',arch:'#e65100',unar:'#1565c0'}[t]||'#FC5027';
+  const p={
+    user:`<path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>`,
+    chat:`<path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>`,
+    check:`<path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>`,
+    cog:`<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/>`,
+    live:`<path d="M5 13l4 4L19 7"/>`,
+    arch:`<polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/>`,
+    unar:`<polyline points="3 8 3 21 21 21 21 8"/><rect x="1" y="3" width="22" height="5"/><line x1="9" y1="12" x2="15" y2="12"/>`,
+  }[t]||'';
+  return `<div style="width:48px;height:48px;background:#fff3f0;border-radius:50%;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2">${p}</svg></div>`;
+}
+
+// ─── STATUS ───
+function triggerStatus(act){
+  document.querySelectorAll('.dd-menu').forEach(m=>m.classList.remove('show'));
+  if(act==='golive'){ startGL(); return; }
+  const cnt=n();
+  const cfgs={
+    archive: {icon:'arch',title:'Archive Checklists?', msg:`Archive <strong>${cnt} checklists</strong>? They will become inactive.`, fn:doArchive},
+    unarchive:{icon:'unar',title:'Unarchive Checklists?',msg:`Unarchive <strong>${cnt} checklists</strong>? They will be restored to Live.`, fn:doUnarchive},
+  }[act];
+  document.getElementById('statIcon').innerHTML=makeIcon(cfgs.icon);
+  document.getElementById('statTitle').textContent=cfgs.title;
+  document.getElementById('statMsg').innerHTML=cfgs.msg;
+  document.getElementById('statBtn').onclick=cfgs.fn;
+  document.getElementById('statMod').classList.add('show');
+}
+function doArchive(){ closeMod('statMod'); const ids=allPages?CLS.map(c=>c.id):[...sel]; let a=0,u=0,s=0; ids.forEach(id=>{const c=CLS.find(x=>x.id===id);if(!c)return;if(c.status==='Archived')u++;else if(c.status==='Draft')s++;else{c.status='Archived';a++;}}); clearSel();render();toast(`✓ Archived: ${a} | Unchanged: ${u} | Skipped: ${s} (Draft)`); }
+function doUnarchive(){ closeMod('statMod'); const ids=allPages?CLS.map(c=>c.id):[...sel]; let u=0,s=0; ids.forEach(id=>{const c=CLS.find(x=>x.id===id);if(!c)return;if(c.status==='Archived'){c.status='Live';u++;}else s++;}); clearSel();render();toast(`✓ Unarchived: ${u} | Skipped: ${s}`); }
+
+// ─── GO LIVE HUB ───
+// Modal is a persistent hub. Go Live always in footer.
+// Checklist Users + RFI Users (if RFI active) = mandatory → Go Live disabled until done.
+// Approver = optional → never blocks Go Live.
+// Step pills at top update as each card is completed.
+// Assignment buttons open existing drawers; hub refreshes when drawer closes.
+
+let glPendingIds = [];
+
+function startGL(){
+  glPendingIds = allPages ? CLS.map(c=>c.id) : [...sel];
+  renderGLHub();
+  document.getElementById('glMod').classList.add('show');
+}
+
+function glGetState(){
+  const cls   = glPendingIds.map(id=>CLS.find(c=>c.id===id)).filter(Boolean);
+  const total      = cls.length;
+  const willLive   = cls.filter(c=>c.status!=='Archived').length;
+  const alrLive    = cls.filter(c=>c.status==='Live').length;
+  const archived   = cls.filter(c=>c.status==='Archived').length;
+  const misU       = cls.filter(c=>c.status!=='Live' && c.users.length===0);
+  const hasRfiCls  = cls.filter(c=>c.hasRfi && c.status!=='Live');
+  const misR       = hasRfiCls.filter(c=>c.rfi.length===0);
+  const cuDone     = misU.length === 0;
+  const rfiNeeded  = hasRfiCls.length > 0;
+  const rfiDone    = misR.length === 0;
+  const mandatoryDone = cuDone && (!rfiNeeded || rfiDone);
+  return { cls, total, willLive, alrLive, archived, misU, hasRfiCls, misR, cuDone, rfiNeeded, rfiDone, mandatoryDone };
+}
+
+function renderGLHub(){
+  const s = glGetState();
+
+  document.getElementById('glSub').textContent =
+    `${s.total} checklist${s.total!==1?'s':''} selected`;
+
+  // ── STEP PILLS
+  let pills = [];
+  pills.push({ label:'Checklist Users', state: s.cuDone ? 'done' : 'active', opt:false });
+  if(s.rfiNeeded)
+    pills.push({ label:'RFI Users', state: s.rfiDone ? 'done' : (s.cuDone ? 'active':'pending'), opt:false });
+  pills.push({ label:'Approver', state:'optional', opt:true });
+  pills.push({ label:'Go Live', state: s.mandatoryDone ? 'active' : 'pending', opt:false });
+
+  document.getElementById('glSteps').innerHTML = pills.map((p,i) => {
+    const cls2 = p.opt ? 'optional' : p.state;
+    const numHtml = p.state==='done'
+      ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>`
+      : `<span style="color:#fff;font-size:10px;font-weight:700">${i+1}</span>`;
+    return `<div class="gl-pill ${cls2}">
+        <span class="gl-pill-num">${numHtml}</span>
+        ${p.label}${p.opt?'<span style="font-size:10px;margin-left:3px;opacity:.7">(optional)</span>':''}
+      </div>${i<pills.length-1?'<span class="gl-pill-arrow">›</span>':''}`;
+  }).join('');
+
+  // ── BODY — cards only, no stats, no missing note
+  let html = `<div class="gl-cards">`;
+
+  // Card 1: Checklist Users
+  html += `<div class="gl-card ${s.cuDone?'card-done':'card-warn'}">
+    <div class="gl-card-icon" style="background:${s.cuDone?'#e8f5e9':'#fff0ec'}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${s.cuDone?'#2e7d32':'#FC5027'}" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+    </div>
+    <div class="gl-card-body">
+      <div class="gl-card-title">Checklist Users</div>
+      <div class="gl-card-desc">Who can fill and submit the checklist stages</div>
+      <div class="gl-card-status ${s.cuDone?'s-done':'s-warn'}">
+        ${s.cuDone ? '✓ Assigned' : 'Not assigned'}
+      </div>
+    </div>
+    <div class="gl-card-action">
+      <button class="gl-btn-assign" onclick="glOpenDrawer('cu')">Assign</button>
+    </div>
+  </div>`;
+
+  // Card 2: RFI Users (only if RFI checklists exist)
+  if(s.rfiNeeded){
+    html += `<div class="gl-card ${s.rfiDone?'card-done':'card-warn'}">
+      <div class="gl-card-icon" style="background:${s.rfiDone?'#e8f5e9':'#fff0ec'}">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${s.rfiDone?'#2e7d32':'#FC5027'}" stroke-width="2"><path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+      </div>
+      <div class="gl-card-body">
+        <div class="gl-card-title">RFI Users</div>
+        <div class="gl-card-desc">Who fills RFI stages · ${s.hasRfiCls.length} checklist${s.hasRfiCls.length>1?'s have':' has'} RFI</div>
+        <div class="gl-card-status ${s.rfiDone?'s-done':'s-warn'}">
+          ${s.rfiDone ? '✓ Assigned' : 'Not assigned'}
+        </div>
+      </div>
+      <div class="gl-card-action">
+        <button class="gl-btn-assign" onclick="glOpenDrawer('rfi')">Assign</button>
+      </div>
+    </div>`;
+  }
+
+  // Card 3: Approver — always Assign button, no done state styling
+  html += `<div class="gl-card card-opt">
+    <div class="gl-card-icon" style="background:#f3e5f5">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7b1fa2" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    </div>
+    <div class="gl-card-body">
+      <div class="gl-card-title">Approver</div>
+      <div class="gl-card-desc">Level 1, 2, 3 approvers for all stages</div>
+    </div>
+    <div class="gl-card-action">
+      <button class="gl-btn-opt" onclick="glOpenDrawer('appr')">Assign</button>
+    </div>
+  </div>`;
+
+  html += `</div>`; // end gl-cards
+
+  // Approver optional note
+  html += `<div style="margin-top:12px;font-size:12px;color:#888;display:flex;align-items:center;gap:6px">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    Approver assignment is optional and can be done after going live.
+  </div>`;
+
+  document.getElementById('glBody').innerHTML = html;
+
+  // Go Live button — disabled until mandatory assignments done
+  const btn = document.getElementById('glGoLiveBtn');
+  btn.disabled = !s.mandatoryDone;
+  btn.title = s.mandatoryDone ? '' : 'Complete Checklist Users and RFI Users assignment first';
+}
+
+function glOpenDrawer(name){
+  window._glHubOpen = true;
+  openDrawer(name);
+}
+
+const _origCloseDrawer = closeDrawer;
+function closeDrawer(){
+  _origCloseDrawer();
+  if(window._glHubOpen){
+    window._glHubOpen = false;
+    setTimeout(()=>{ renderGLHub(); document.getElementById('glMod').classList.add('show'); }, 320);
+  }
+}
+
+function glConfirmGoLive(){
+  closeMod('glMod');
+  const s = glGetState();
+  document.getElementById('statIcon').innerHTML = makeIcon('live');
+  document.getElementById('statTitle').textContent = 'Confirm Go Live';
+  document.getElementById('statMsg').innerHTML =
+    `<strong>${s.willLive - s.alrLive} checklist${(s.willLive-s.alrLive)!==1?'s':''}</strong> will go live now.` +
+    (s.alrLive  ? `<br><span style="font-size:12px;color:#888">${s.alrLive} already live — unchanged.</span>` : '') +
+    (s.archived ? `<br><span style="font-size:12px;color:#888">${s.archived} archived — skipped.</span>`    : '') +
+    `<br><br>Do you want to continue?`;
+  document.getElementById('statBtn').onclick = doGoLive;
+  document.getElementById('statMod').classList.add('show');
+}
+
+function doGoLive(){
+  closeMod('statMod');
+  const ids = allPages ? CLS.map(c=>c.id) : [...sel];
+  let l=0, u=0, s=0;
+  ids.forEach(id=>{
+    const c=CLS.find(x=>x.id===id); if(!c) return;
+    if(c.status==='Live') u++;
+    else if(c.status==='Archived') s++;
+    else { c.status='Live'; l++; }
+  });
+  clearSel(); render();
+  toast(`✓ Live: ${l} | Unchanged: ${u} | Skipped: ${s}`);
+}
+
+function quickAssign(id){ sel.clear(); sel.add(id); allPages=false; updateBar(); render(); openDrawer('cu'); }
+
+// ─── TOAST ───
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast show'; setTimeout(()=>t.classList.remove('show'),5000); }
+
+render();
+</script>
+</body>
+</html>

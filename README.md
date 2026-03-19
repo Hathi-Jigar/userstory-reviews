@@ -32,6 +32,7 @@ Review space for digiQC user stories. Every user story and its interactive HTML 
 | 1 | Instruction: Role-Based Action Control & Team-Scoped Visibility | Under Review | [Open Review](https://hathi-jigar.github.io/userstory-reviews/reviews/us-instruction-rbac/) |
 | 2 | Issue Assignment with Assignee & Notification Recipients | Under Review | [Open Review](https://hathi-jigar.github.io/userstory-reviews/reviews/us-issue-assignment-notification/) |
 | 3 | RFI Auto-Numbering with 7-Level Configurator | Under Review | [Open Review](https://hathi-jigar.github.io/userstory-reviews/reviews/us-rfi-auto-numbering/) |
+| 4 | Checklist Bulk Actions | Under Review | [Open Review](https://hathi-jigar.github.io/userstory-reviews/reviews/us-checklist-bulk-actions/) |
 
 ## Dashboard
 

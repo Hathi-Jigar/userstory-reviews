@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Review: Checklist Bulk Actions — digiQC</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --brand: #E8450A;
+    --brand-light: #FFF4F0;
+    --bg: #F8F9FB;
+    --white: #FFFFFF;
+    --text: #1A1D23;
+    --text-sub: #6B7280;
+    --text-muted: #9CA3AF;
+    --border: #E5E7EB;
+    --comment-bg: #FFFBEB;
+    --comment-border: #FCD34D;
+    --resolved-bg: #F0FDF4;
+    --resolved-border: #86EFAC;
+    --highlight: rgba(252, 211, 77, 0.35);
+    --highlight-hover: rgba(252, 211, 77, 0.55);
+    --radius: 12px;
+    --shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+  .layout { display: grid; grid-template-columns: 1fr 360px; min-height: 100vh; }
+  .main-content { padding: 32px 48px; max-width: 900px; overflow-y: auto; }
+  .sidebar { background: var(--white); border-left: 1px solid var(--border); padding: 20px; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+
+  .top-bar { background: var(--white); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; grid-column: 1 / -1; }
+  .top-bar-left { display: flex; align-items: center; gap: 12px; }
+  .logo { font-size: 14px; font-weight: 700; color: var(--brand); }
+  .review-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.3s; }
+  .review-badge.under-review { background: var(--comment-bg); border: 1px solid var(--comment-border); color: #92400E; }
+  .review-badge.approved { background: #DCFCE7; border: 1px solid #86EFAC; color: #166534; }
+  .review-badge.changes-needed { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; }
+  .top-bar-right { display: flex; align-items: center; gap: 10px; }
+  .reviewer-name { font-size: 13px; color: var(--text-sub); }
+  .approve-btn { background: #16A34A; color: white; border: none; padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .approve-btn:hover { background: #15803D; }
+  .changes-btn { background: transparent; color: var(--brand); border: 1.5px solid var(--brand); padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+
+  /* Edit Mode */
+  .edit-toggle { background: transparent; color: var(--text-sub); border: 1.5px solid var(--border); padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+  .edit-toggle:hover { border-color: var(--text-sub); }
+  .edit-toggle.active { background: #1A1D23; color: white; border-color: #1A1D23; }
+  .edit-save-btn { background: #16A34A; color: white; border: none; padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; display: none; }
+  .edit-save-btn.visible { display: inline-block; }
+  .edit-cancel-btn { background: transparent; color: var(--text-sub); border: 1.5px solid var(--border); padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; display: none; }
+  .edit-cancel-btn.visible { display: inline-block; }
+  .spec-editor { width: 100%; min-height: 600px; padding: 20px; border: 2px solid var(--brand); border-radius: 12px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; line-height: 1.7; color: var(--text); background: var(--white); resize: vertical; outline: none; display: none; }
+  .spec-editor.visible { display: block; }
+  .spec-editor:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(232,69,10,0.1); }
+  .edit-banner { background: #FFF7ED; border-bottom: 1px solid #FED7AA; padding: 8px 24px; font-size: 12px; color: #92400E; font-weight: 500; display: none; align-items: center; gap: 8px; grid-column: 1 / -1; }
+  .edit-banner.visible { display: flex; }
+
+  /* Move button */
+  .move-btn { background: #1A1D23; color: white; border: none; padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 6px; }
+  .move-btn:hover { background: #2d3040; }
+
+  /* Move modal */
+  .move-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 800; }
+  .move-overlay.visible { display: flex; }
+  .move-modal { background: white; border-radius: 16px; width: 480px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 8px 40px rgba(0,0,0,0.2); overflow: hidden; }
+  .move-modal-header { padding: 20px 24px 12px; border-bottom: 1px solid var(--border); }
+  .move-modal-header h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .move-modal-header p { font-size: 13px; color: var(--text-sub); }
+  .move-breadcrumb { padding: 10px 24px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-sub); display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .move-breadcrumb span { cursor: pointer; color: var(--brand); font-weight: 500; }
+  .move-breadcrumb span:last-child { color: var(--text); cursor: default; }
+  .move-folder-list { flex: 1; overflow-y: auto; padding: 8px 0; }
+  .move-folder-list::-webkit-scrollbar { width: 4px; }
+  .move-folder-list::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+  .move-folder-item { display: flex; align-items: center; gap: 10px; padding: 12px 24px; cursor: pointer; transition: background 0.1s; font-size: 14px; color: var(--text); }
+  .move-folder-item:hover { background: var(--bg); }
+  .move-folder-item.selected { background: var(--brand-light); border-left: 3px solid var(--brand); }
+  .move-folder-icon { font-size: 18px; flex-shrink: 0; }
+  .move-folder-name { flex: 1; font-weight: 500; }
+  .move-folder-arrow { color: var(--text-muted); font-size: 14px; }
+  .move-modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: space-between; align-items: center; }
+  .move-selected-path { font-size: 12px; color: var(--text-sub); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .move-cancel-btn { background: none; border: 1px solid var(--border); padding: 8px 18px; border-radius: 8px; font-size: 13px; cursor: pointer; font-family: inherit; color: var(--text-sub); }
+  .move-confirm-btn { background: var(--brand); color: white; border: none; padding: 8px 24px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .move-confirm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .move-loading { padding: 40px; text-align: center; color: var(--text-muted); font-size: 13px; }
+  .move-filename-input { width: 100%; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; margin-top: 8px; }
+  .move-filename-input:focus { border-color: var(--brand); }
+
+  /* Markdown rendered content */
+  .spec-content h1 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .spec-content h2 { font-size: 17px; font-weight: 700; margin: 24px 0 10px; border-bottom: 2px solid var(--border); padding-bottom: 6px; }
+  .spec-content h3 { font-size: 14px; font-weight: 700; margin: 16px 0 6px; }
+  .spec-content p { margin-bottom: 10px; font-size: 14px; }
+  .spec-content ul, .spec-content ol { margin-bottom: 10px; padding-left: 24px; }
+  .spec-content li { margin-bottom: 4px; font-size: 14px; }
+  .spec-content table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 13px; }
+  .spec-content th { background: var(--bg); padding: 7px 10px; text-align: left; font-weight: 600; border: 1px solid var(--border); }
+  .spec-content td { padding: 7px 10px; border: 1px solid var(--border); }
+  .spec-content blockquote { border-left: 3px solid var(--brand); padding: 8px 16px; background: var(--brand-light); margin: 10px 0; border-radius: 0 8px 8px 0; font-size: 14px; }
+  .spec-content code { background: #F3F4F6; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  .spec-content pre { background: #1A1D23; color: #E5E7EB; padding: 14px; border-radius: 8px; overflow-x: auto; margin-bottom: 14px; }
+  .spec-content pre code { background: none; color: inherit; padding: 0; }
+  .spec-content hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+  .spec-content input[type="checkbox"] { margin-right: 6px; }
+
+  /* Prototype */
+  .prototype-section { margin: 24px 0; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .prototype-header { padding: 12px 16px; background: var(--bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--text-sub); }
+  .prototype-header a { color: var(--brand); text-decoration: none; font-size: 12px; }
+  .prototype-iframe { width: 100%; height: 700px; border: none; }
+
+  /* Comment popup */
+  .comment-popup { position: fixed; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; width: 320px; z-index: 500; display: none; }
+  .comment-popup.visible { display: block; }
+  .popup-header { font-size: 12px; font-weight: 600; color: var(--text-sub); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .popup-selected { background: var(--comment-bg); border-left: 3px solid var(--comment-border); padding: 6px 10px; font-size: 12px; color: #92400E; margin-bottom: 10px; border-radius: 0 6px 6px 0; max-height: 60px; overflow: hidden; font-style: italic; }
+  .popup-name-input, .popup-textarea { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; resize: none; margin-bottom: 8px; }
+  .popup-name-input:focus, .popup-textarea:focus { border-color: var(--brand); }
+  .popup-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .popup-cancel { background: none; border: 1px solid var(--border); padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit; color: var(--text-sub); }
+  .popup-submit { background: var(--brand); border: none; color: white; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
+
+  /* Highlights */
+  .comment-highlight { background: var(--highlight); cursor: pointer; border-radius: 2px; transition: background 0.15s; }
+  .comment-highlight:hover { background: var(--highlight-hover); }
+  .comment-highlight.resolved { background: rgba(134, 239, 172, 0.25); }
+
+  /* Sidebar */
+  .sidebar-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .sidebar-count { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
+  .sidebar-filter { display: flex; gap: 6px; margin-bottom: 16px; }
+  .filter-chip { padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--white); font-size: 11px; font-weight: 600; cursor: pointer; color: var(--text-sub); font-family: inherit; }
+  .filter-chip.active { background: var(--text); color: var(--white); border-color: var(--text); }
+  .comment-list { flex: 1; overflow-y: auto; }
+  .comment-card { background: var(--comment-bg); border: 1px solid var(--comment-border); border-radius: 10px; padding: 12px; margin-bottom: 10px; cursor: pointer; transition: transform 0.1s; }
+  .comment-card:hover { transform: translateX(-2px); }
+  .comment-card.resolved { background: var(--resolved-bg); border-color: var(--resolved-border); }
+  .comment-author { font-size: 12px; font-weight: 700; }
+  .comment-time { font-size: 10px; color: var(--text-muted); margin-left: 6px; }
+  .comment-selected-text { font-size: 11px; color: #92400E; font-style: italic; margin: 6px 0; padding: 4px 8px; background: rgba(252,211,77,0.2); border-radius: 4px; max-height: 36px; overflow: hidden; }
+  .comment-card.resolved .comment-selected-text { color: #166534; background: rgba(134,239,172,0.15); }
+  .comment-text { font-size: 13px; line-height: 1.5; }
+  .comment-status { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 8px; padding: 2px 8px; border-radius: 4px; }
+  .status-open { background: #FEF3C7; color: #92400E; }
+  .status-resolved { background: #DCFCE7; color: #166534; }
+  .resolve-btn { background: none; border: 1px solid var(--border); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; color: #16A34A; float: right; margin-top: 6px; font-family: inherit; }
+  .resolve-btn:hover { background: #F0FDF4; }
+  .reply-section { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.06); }
+  .reply-author { font-size: 11px; font-weight: 600; color: #166534; }
+  .reply-text { font-size: 12px; color: var(--text-sub); }
+  .empty-comments { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+  .empty-comments .icon { font-size: 32px; margin-bottom: 8px; opacity: 0.5; }
+  .empty-comments .title { font-size: 14px; font-weight: 600; color: var(--text-sub); margin-bottom: 4px; }
+  .empty-comments .sub { font-size: 12px; }
+
+  /* Setup modal */
+  .setup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+  .setup-overlay.hidden { display: none; }
+  .setup-modal { background: white; border-radius: 16px; padding: 32px; width: 420px; box-shadow: 0 8px 40px rgba(0,0,0,0.2); }
+  .setup-modal h2 { font-size: 18px; margin-bottom: 6px; }
+  .setup-modal p { font-size: 13px; color: var(--text-sub); margin-bottom: 16px; line-height: 1.6; }
+  .setup-modal label { font-size: 12px; font-weight: 600; color: var(--text-sub); display: block; margin-bottom: 4px; }
+  .setup-modal input { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; margin-bottom: 12px; }
+  .setup-modal input:focus { border-color: var(--brand); }
+  .setup-modal .setup-btn { width: 100%; padding: 12px; background: var(--brand); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .setup-modal .setup-btn:hover { background: #C73509; }
+  .setup-error { color: #DC2626; font-size: 12px; margin-bottom: 8px; display: none; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1A1D23; color: white; padding: 12px 24px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 600; display: none; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+  .toast.show { display: block; animation: fadeIn 0.2s; }
+  .toast.success { background: #166534; }
+  .toast.error { background: #991B1B; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(8px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+  .loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.8); display: none; align-items: center; justify-content: center; z-index: 700; font-size: 14px; color: var(--text-sub); }
+  .loading-overlay.show { display: flex; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { position: fixed; right: -380px; top: 0; height: 100vh; width: 360px; z-index: 200; transition: right 0.3s; box-shadow: -4px 0 24px rgba(0,0,0,0.1); }
+    .sidebar.open { right: 0; }
+    .main-content { padding: 20px; }
+    .toggle-sidebar { position: fixed; bottom: 20px; right: 20px; background: var(--brand); color: white; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: var(--shadow); z-index: 150; border: none; }
+  }
+  @media (min-width: 901px) { .toggle-sidebar { display: none; } }
+</style>
+</head>
+<body>
+
+<!-- Setup Modal (first visit) -->
+<div class="setup-overlay" id="setupOverlay">
+  <div class="setup-modal">
+    <h2>Welcome, Reviewer</h2>
+    <p>Enter your name and the review access key shared with you. This is saved in your browser — you only need to do this once.</p>
+    <label>Your Name</label>
+    <input type="text" id="setupName" placeholder="e.g. Sumant">
+    <label>Access Key</label>
+    <input type="password" id="setupToken" placeholder="Paste the access key shared with you">
+    <div class="setup-error" id="setupError">Please fill in both fields</div>
+    <button class="setup-btn" onclick="completeSetup()">Start Reviewing</button>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <span class="logo">digiQC</span>
+      <span class="review-badge under-review" id="reviewBadge">Under Review</span>
+      <span style="font-size:13px;color:var(--text-sub);margin-left:8px">Checklist Bulk Actions</span>
+    </div>
+    <div class="top-bar-right">
+      <span class="reviewer-name" id="reviewerDisplay"></span>
+      <button class="edit-toggle" id="editToggle" onclick="toggleEditMode()">&#9998; Edit</button>
+      <button class="edit-cancel-btn" id="editCancelBtn" onclick="cancelEdit()">Cancel</button>
+      <button class="edit-save-btn" id="editSaveBtn" onclick="saveEdit()">Save Changes</button>
+      <button class="changes-btn" onclick="submitDecision('changes_needed')">Changes Needed</button>
+      <button class="approve-btn" onclick="submitDecision('approved')">Approve</button>
+      <button class="move-btn" id="moveBtn" onclick="openMoveModal()">&#x1F4E6; Move</button>
+    </div>
+  </div>
+  <div class="edit-banner" id="editBanner">&#9998; Edit Mode — you are editing the raw markdown. Click "Save Changes" when done.</div>
+
+  <div class="main-content">
+    <div class="spec-content" id="specContent">Loading spec...</div>
+    <textarea class="spec-editor" id="specEditor"></textarea>
+    <div class="prototype-section">
+      <div class="prototype-header">
+        <span>Interactive Prototype</span>
+        <a href="https://digiqc-hq.github.io/product-management/screens/us-checklist-bulk-actions/" target="_blank">Open in new tab</a>
+      </div>
+      <iframe class="prototype-iframe" src="https://digiqc-hq.github.io/product-management/screens/us-checklist-bulk-actions/"></iframe>
+    </div>
+  </div>
+
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-title">Comments</div>
+    <div class="sidebar-count" id="commentCount">0 comments</div>
+    <div class="sidebar-filter">
+      <button class="filter-chip active" onclick="filterComments('all', this)">All</button>
+      <button class="filter-chip" onclick="filterComments('open', this)">Open</button>
+      <button class="filter-chip" onclick="filterComments('resolved', this)">Resolved</button>
+    </div>
+    <div class="comment-list" id="commentList">
+      <div class="empty-comments">
+        <div class="icon">&#x1F4AC;</div>
+        <div class="title">No comments yet</div>
+        <div class="sub">Select text in the spec to add a comment</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Comment Popup -->
+<div class="comment-popup" id="commentPopup">
+  <div class="popup-header">Add Comment</div>
+  <div class="popup-selected" id="popupSelected"></div>
+  <textarea class="popup-textarea" id="popupText" rows="3" placeholder="Write your comment..."></textarea>
+  <div class="popup-actions">
+    <button class="popup-cancel" onclick="hidePopup()">Cancel</button>
+    <button class="popup-submit" onclick="submitComment()">Submit</button>
+  </div>
+</div>
+
+<button class="toggle-sidebar" onclick="document.getElementById('sidebar').classList.toggle('open')">&#x1F4AC;</button>
+<div class="toast" id="toast"></div>
+<div class="loading-overlay" id="loading"><span>Saving...</span></div>
+
+<!-- Move Modal -->
+<div class="move-overlay" id="moveOverlay">
+  <div class="move-modal">
+    <div class="move-modal-header">
+      <h3>Move to Product Management</h3>
+      <p>Select the folder where this user story should be placed</p>
+    </div>
+    <div class="move-breadcrumb" id="moveBreadcrumb">
+      <span onclick="navigateFolder('')">product-management</span>
+    </div>
+    <div class="move-folder-list" id="moveFolderList">
+      <div class="move-loading">Loading folders...</div>
+    </div>
+    <div style="padding:12px 24px 0;border-top:1px solid var(--border)">
+      <label style="font-size:12px;font-weight:600;color:var(--text-sub)">File name</label>
+      <input class="move-filename-input" id="moveFilename" value="US-checklist-bulk-actions.md">
+    </div>
+    <div class="move-modal-footer">
+      <div class="move-selected-path" id="moveSelectedPath">Select a folder...</div>
+      <button class="move-cancel-btn" onclick="closeMoveModal()">Cancel</button>
+      <button class="move-confirm-btn" id="moveConfirmBtn" onclick="confirmMove()" disabled>Move Here</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const REPO_OWNER = 'Hathi-Jigar';
+  const REPO_NAME = 'userstory-reviews';
+  const STORY_FOLDER = 'us-checklist-bulk-actions';
+  const SPEC_PATH = `reviews/${STORY_FOLDER}/spec.md`;
+  const COMMENTS_PATH = `reviews/${STORY_FOLDER}/comments.json`;
+
+  let comments = [];
+  let selectedText = '';
+  let currentFilter = 'all';
+  let rawMarkdown = '';
+  let isEditMode = false;
+  let specSha = null;
+
+  function getToken() { return localStorage.getItem('review_token'); }
+  function getName() { return localStorage.getItem('reviewer_name'); }
+
+  // Setup check
+  function checkSetup() {
+    if (getToken() && getName()) {
+      document.getElementById('setupOverlay').classList.add('hidden');
+      document.getElementById('reviewerDisplay').textContent = 'Reviewing as: ' + getName();
+      init();
+    }
+  }
+
+  function completeSetup() {
+    const name = document.getElementById('setupName').value.trim();
+    const token = document.getElementById('setupToken').value.trim();
+    if (!name || !token) {
+      document.getElementById('setupError').style.display = 'block';
+      return;
+    }
+    localStorage.setItem('reviewer_name', name);
+    localStorage.setItem('review_token', token);
+    document.getElementById('setupOverlay').classList.add('hidden');
+    document.getElementById('reviewerDisplay').textContent = 'Reviewing as: ' + name;
+    init();
+  }
+
+  async function init() {
+    await loadSpec();
+    await loadComments();
+    await loadDecision();
+    setupTextSelection();
+  }
+
+  async function loadDecision() {
+    try {
+      const path = `reviews/${STORY_FOLDER}/decision.json`;
+      const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
+        headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const decision = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+        updateBadge(decision.decision, decision.reviewer);
+      }
+    } catch (e) { /* no decision yet */ }
+  }
+
+  function updateBadge(decision, reviewer) {
+    const badge = document.getElementById('reviewBadge');
+    if (decision === 'approved') {
+      badge.textContent = 'Approved by ' + reviewer;
+      badge.className = 'review-badge approved';
+    } else if (decision === 'changes_needed') {
+      badge.textContent = 'Changes Needed — ' + reviewer;
+      badge.className = 'review-badge changes-needed';
+    } else {
+      badge.textContent = 'Under Review';
+      badge.className = 'review-badge under-review';
+    }
+  }
+
+  // Load spec markdown and render
+  async function loadSpec() {
+    try {
+      const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${SPEC_PATH}`, {
+        headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        rawMarkdown = decodeURIComponent(escape(atob(data.content)));
+        specSha = data.sha;
+        document.getElementById('specContent').innerHTML = marked.parse(rawMarkdown);
+      } else {
+        document.getElementById('specContent').innerHTML = '<p style="color:#991B1B">Failed to load spec. Check your access key.</p>';
+      }
+    } catch (e) {
+      document.getElementById('specContent').innerHTML = '<p style="color:#991B1B">Error loading spec: ' + e.message + '</p>';
+    }
+  }
+
+  // === EDIT MODE ===
+  function toggleEditMode() {
+    if (isEditMode) return;
+    isEditMode = true;
+    document.getElementById('specContent').style.display = 'none';
+    const editor = document.getElementById('specEditor');
+    editor.value = rawMarkdown;
+    editor.classList.add('visible');
+    document.getElementById('editToggle').classList.add('active');
+    document.getElementById('editToggle').innerHTML = '&#9998; Editing...';
+    document.getElementById('editSaveBtn').classList.add('visible');
+    document.getElementById('editCancelBtn').classList.add('visible');
+    document.getElementById('editBanner').classList.add('visible');
+    editor.focus();
+  }
+
+  function cancelEdit() {
+    isEditMode = false;
+    document.getElementById('specEditor').classList.remove('visible');
+    document.getElementById('specContent').style.display = '';
+    document.getElementById('editToggle').classList.remove('active');
+    document.getElementById('editToggle').innerHTML = '&#9998; Edit';
+    document.getElementById('editSaveBtn').classList.remove('visible');
+    document.getElementById('editCancelBtn').classList.remove('visible');
+    document.getElementById('editBanner').classList.remove('visible');
+  }
+
+  async function saveEdit() {
+    const newMarkdown = document.getElementById('specEditor').value;
+    if (newMarkdown === rawMarkdown) {
+      showToast('No changes to save', '');
+      cancelEdit();
+      return;
+    }
+
+    document.getElementById('loading').classList.add('show');
+    try {
+      // Get latest sha
+      const getRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${SPEC_PATH}`, {
+        headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (getRes.ok) { specSha = (await getRes.json()).sha; }
+
+      const content = btoa(unescape(encodeURIComponent(newMarkdown)));
+      const body = { message: `Edit by ${getName()}: updated spec`, content, branch: 'main', sha: specSha };
+
+      const putRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${SPEC_PATH}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `token ${getToken()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!putRes.ok) throw new Error('Save failed');
+
+      const putData = await putRes.json();
+      specSha = putData.content.sha;
+      rawMarkdown = newMarkdown;
+      document.getElementById('specContent').innerHTML = marked.parse(rawMarkdown);
+      cancelEdit();
+      applyHighlights();
+      showToast('Changes saved successfully', 'success');
+    } catch (e) {
+      showToast('Failed to save changes — ' + e.message, 'error');
+    }
+    document.getElementById('loading').classList.remove('show');
+  }
+
+  async function loadComments() {
+    try {
+      const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${COMMENTS_PATH}`, {
+        headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        comments = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+      } else { comments = []; }
+    } catch (e) { comments = []; }
+    renderComments();
+    applyHighlights();
+  }
+
+  async function saveComments() {
+    document.getElementById('loading').classList.add('show');
+    try {
+      let sha = null;
+      const getRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${COMMENTS_PATH}`, {
+        headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (getRes.ok) { sha = (await getRes.json()).sha; }
+
+      const content = btoa(unescape(encodeURIComponent(JSON.stringify(comments, null, 2))));
+      const body = { message: `Comment by ${getName()} on ${STORY_FOLDER}`, content, branch: 'main' };
+      if (sha) body.sha = sha;
+
+      const putRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${COMMENTS_PATH}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `token ${getToken()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!putRes.ok) throw new Error('Save failed');
+      showToast('Comment saved', 'success');
+    } catch (e) {
+      showToast('Failed to save — check your access key', 'error');
+    }
+    document.getElementById('loading').classList.remove('show');
+  }
+
+  function setupTextSelection() {
+    document.getElementById('specContent').addEventListener('mouseup', (e) => {
+      const sel = window.getSelection();
+      const text = sel.toString().trim();
+      if (text.length > 2) {
+        selectedText = text;
+        showPopup(e.clientX, e.clientY);
+      }
+    });
+    document.addEventListener('mousedown', (e) => {
+      const popup = document.getElementById('commentPopup');
+      if (!popup.contains(e.target) && popup.classList.contains('visible')) hidePopup();
+    });
+  }
+
+  function showPopup(x, y) {
+    const popup = document.getElementById('commentPopup');
+    document.getElementById('popupSelected').textContent = selectedText.substring(0, 120) + (selectedText.length > 120 ? '...' : '');
+    document.getElementById('popupText').value = '';
+    let left = Math.min(x, window.innerWidth - 340);
+    let top = y + 10;
+    if (top + 280 > window.innerHeight) top = y - 280;
+    popup.style.left = left + 'px';
+    popup.style.top = top + 'px';
+    popup.classList.add('visible');
+    document.getElementById('popupText').focus();
+  }
+
+  function hidePopup() {
+    document.getElementById('commentPopup').classList.remove('visible');
+    selectedText = '';
+  }
+
+  async function submitComment() {
+    const text = document.getElementById('popupText').value.trim();
+    if (!text) { showToast('Comment is required', 'error'); return; }
+    comments.push({
+      id: 'c' + Date.now(),
+      selectedText: selectedText.substring(0, 300),
+      comment: text,
+      author: getName(),
+      createdAt: new Date().toISOString(),
+      status: 'open',
+      resolvedBy: null,
+      resolvedAt: null,
+      reply: null
+    });
+    hidePopup();
+    renderComments();
+    applyHighlights();
+    await saveComments();
+  }
+
+  async function resolveComment(id) {
+    const name = getName() || prompt('Your name:');
+    if (!name) return;
+    const c = comments.find(x => x.id === id);
+    if (c) { c.status = 'resolved'; c.resolvedBy = name; c.resolvedAt = new Date().toISOString(); }
+    renderComments();
+    applyHighlights();
+    await saveComments();
+  }
+
+  async function replyToComment(id) {
+    const reply = prompt('Your reply:');
+    if (!reply) return;
+    const c = comments.find(x => x.id === id);
+    if (c) { c.reply = { author: getName(), text: reply, createdAt: new Date().toISOString() }; }
+    renderComments();
+    await saveComments();
+  }
+
+  function renderComments() {
+    const list = document.getElementById('commentList');
+    const filtered = currentFilter === 'all' ? comments : comments.filter(c => c.status === currentFilter);
+    const openCount = comments.filter(c => c.status === 'open').length;
+    const resolvedCount = comments.filter(c => c.status === 'resolved').length;
+    document.getElementById('commentCount').textContent = `${comments.length} comments (${openCount} open, ${resolvedCount} resolved)`;
+
+    if (filtered.length === 0) {
+      list.innerHTML = `<div class="empty-comments"><div class="icon">&#x1F4AC;</div><div class="title">${currentFilter === 'all' ? 'No comments yet' : 'No ' + currentFilter + ' comments'}</div><div class="sub">Select text in the spec to add a comment</div></div>`;
+      return;
+    }
+    list.innerHTML = filtered.map(c => {
+      const time = new Date(c.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+      const isR = c.status === 'resolved';
+      return `<div class="comment-card ${isR ? 'resolved' : ''}" onclick="scrollToHighlight('${c.id}')">
+        <div><span class="comment-author">${c.author}</span><span class="comment-time">${time}</span></div>
+        <div class="comment-selected-text">"${c.selectedText.substring(0, 80)}${c.selectedText.length > 80 ? '...' : ''}"</div>
+        <div class="comment-text">${c.comment}</div>
+        ${c.reply ? `<div class="reply-section"><div class="reply-author">${c.reply.author} replied:</div><div class="reply-text">${c.reply.text}</div></div>` : ''}
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+          <span class="comment-status ${isR ? 'status-resolved' : 'status-open'}">${isR ? '&#10003; Resolved' + (c.resolvedBy ? ' by ' + c.resolvedBy : '') : '&#9679; Open'}</span>
+          ${!isR ? `<div style="display:flex;gap:4px"><button class="resolve-btn" onclick="event.stopPropagation();replyToComment('${c.id}')" style="color:var(--text-sub)">Reply</button><button class="resolve-btn" onclick="event.stopPropagation();resolveComment('${c.id}')">Resolve</button></div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function filterComments(filter, el) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    renderComments();
+  }
+
+  function applyHighlights() {
+    document.querySelectorAll('.comment-highlight').forEach(el => {
+      const parent = el.parentNode;
+      parent.replaceChild(document.createTextNode(el.textContent), el);
+      parent.normalize();
+    });
+    const spec = document.getElementById('specContent');
+    comments.forEach(c => {
+      if (c.selectedText) highlightText(spec, c.selectedText, c.id, c.status === 'resolved');
+    });
+  }
+
+  function highlightText(root, text, commentId, resolved) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      const searchText = text.substring(0, 60);
+      const idx = node.textContent.indexOf(searchText);
+      if (idx >= 0) {
+        const range = document.createRange();
+        range.setStart(node, idx);
+        range.setEnd(node, Math.min(idx + text.length, node.textContent.length));
+        const span = document.createElement('span');
+        span.className = `comment-highlight ${resolved ? 'resolved' : ''}`;
+        span.dataset.commentId = commentId;
+        span.onclick = () => scrollToComment(commentId);
+        range.surroundContents(span);
+        break;
+      }
+    }
+  }
+
+  function scrollToComment(id) {
+    const card = document.querySelector(`.comment-card[onclick*="${id}"]`);
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function scrollToHighlight(id) {
+    const hl = document.querySelector(`[data-comment-id="${id}"]`);
+    if (hl) hl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  async function submitDecision(decision) {
+    const path = `reviews/${STORY_FOLDER}/decision.json`;
+    const meta = { decision, reviewer: getName(), timestamp: new Date().toISOString(), openComments: comments.filter(c => c.status === 'open').length, totalComments: comments.length };
+    try {
+      let sha = null;
+      const getRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
+        headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (getRes.ok) { sha = (await getRes.json()).sha; }
+      const body = { message: `Review: ${decision} by ${getName()}`, content: btoa(unescape(encodeURIComponent(JSON.stringify(meta, null, 2)))), branch: 'main' };
+      if (sha) body.sha = sha;
+      await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `token ${getToken()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      updateBadge(decision, getName());
+      showToast(decision === 'approved' ? '&#10003; Story approved!' : 'Changes requested — reviewer notified', 'success');
+    } catch (e) { showToast('Failed to save decision', 'error'); }
+  }
+
+  // === MOVE TO PRODUCT-MANAGEMENT ===
+  const TARGET_REPO_OWNER = 'digiqc-hq';
+  const TARGET_REPO_NAME = 'product-management';
+  let currentMovePath = '';
+  let selectedMovePath = '';
+
+  function openMoveModal() {
+    document.getElementById('moveOverlay').classList.add('visible');
+    navigateFolder('');
+  }
+
+  function closeMoveModal() {
+    document.getElementById('moveOverlay').classList.remove('visible');
+    selectedMovePath = '';
+  }
+
+  async function navigateFolder(path) {
+    currentMovePath = path;
+    selectedMovePath = '';
+    document.getElementById('moveConfirmBtn').disabled = true;
+    document.getElementById('moveSelectedPath').textContent = 'Select a folder...';
+
+    // Update breadcrumb
+    const bc = document.getElementById('moveBreadcrumb');
+    const parts = path ? path.split('/') : [];
+    let bcHtml = '<span onclick="navigateFolder(\'\')">product-management</span>';
+    let accumulated = '';
+    parts.forEach((p, i) => {
+      accumulated += (i > 0 ? '/' : '') + p;
+      const accCopy = accumulated;
+      if (i < parts.length - 1) {
+        bcHtml += ' / <span onclick="navigateFolder(\'' + accCopy + '\')">' + p + '</span>';
+      } else {
+        bcHtml += ' / <span>' + p + '</span>';
+      }
+    });
+    bc.innerHTML = bcHtml;
+
+    // Load folder contents
+    const list = document.getElementById('moveFolderList');
+    list.innerHTML = '<div class="move-loading">Loading...</div>';
+
+    try {
+      const url = path
+        ? `https://api.github.com/repos/${TARGET_REPO_OWNER}/${TARGET_REPO_NAME}/contents/${path}`
+        : `https://api.github.com/repos/${TARGET_REPO_OWNER}/${TARGET_REPO_NAME}/contents`;
+      const res = await fetch(url, {
+        headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (!res.ok) throw new Error('Failed to load');
+      const items = await res.json();
+      const folders = items.filter(i => i.type === 'dir').sort((a, b) => a.name.localeCompare(b.name));
+
+      if (folders.length === 0) {
+        list.innerHTML = '<div class="move-loading">No subfolders — you can move the file here</div>';
+        selectFolder(path);
+        return;
+      }
+
+      list.innerHTML = folders.map(f => {
+        return `<div class="move-folder-item" onclick="handleFolderClick(event, '${f.path}')" ondblclick="navigateFolder('${f.path}')">
+          <span class="move-folder-icon">&#x1F4C1;</span>
+          <span class="move-folder-name">${f.name}</span>
+          <span class="move-folder-arrow">&#x276F;</span>
+        </div>`;
+      }).join('');
+    } catch (e) {
+      list.innerHTML = '<div class="move-loading" style="color:#991B1B">Failed to load folders</div>';
+    }
+  }
+
+  function handleFolderClick(event, path) {
+    // Single click = select, double click = navigate into
+    document.querySelectorAll('.move-folder-item').forEach(i => i.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+    selectFolder(path);
+  }
+
+  function selectFolder(path) {
+    selectedMovePath = path || currentMovePath;
+    document.getElementById('moveConfirmBtn').disabled = false;
+    document.getElementById('moveSelectedPath').textContent = selectedMovePath || 'Root (product-management/)';
+  }
+
+  async function confirmMove() {
+    const filename = document.getElementById('moveFilename').value.trim();
+    if (!filename) { showToast('Filename is required', 'error'); return; }
+    if (!selectedMovePath && !currentMovePath) { showToast('Select a folder first', 'error'); return; }
+
+    const targetPath = (selectedMovePath || currentMovePath) + '/' + filename;
+    document.getElementById('loading').classList.add('show');
+
+    try {
+      // 1. Push spec.md to product-management
+      const content = btoa(unescape(encodeURIComponent(rawMarkdown)));
+
+      // Check if file already exists
+      let sha = null;
+      const checkRes = await fetch(`https://api.github.com/repos/${TARGET_REPO_OWNER}/${TARGET_REPO_NAME}/contents/${targetPath}`, {
+        headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (checkRes.ok) { sha = (await checkRes.json()).sha; }
+
+      const body = {
+        message: `Move ${filename} from review to ${selectedMovePath || currentMovePath}`,
+        content,
+        branch: 'main'
+      };
+      if (sha) body.sha = sha;
+
+      const putRes = await fetch(`https://api.github.com/repos/${TARGET_REPO_OWNER}/${TARGET_REPO_NAME}/contents/${targetPath}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `token ${getToken()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!putRes.ok) throw new Error('Failed to move spec');
+
+      // 2. Update decision.json to record the move
+      const moveMeta = {
+        decision: 'moved',
+        movedTo: targetPath,
+        movedBy: getName(),
+        timestamp: new Date().toISOString(),
+        targetRepo: `${TARGET_REPO_OWNER}/${TARGET_REPO_NAME}`
+      };
+
+      const decPath = `reviews/${STORY_FOLDER}/decision.json`;
+      let decSha = null;
+      const decRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${decPath}`, {
+        headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (decRes.ok) { decSha = (await decRes.json()).sha; }
+
+      const decBody = {
+        message: `Moved to ${TARGET_REPO_OWNER}/${TARGET_REPO_NAME}/${targetPath}`,
+        content: btoa(unescape(encodeURIComponent(JSON.stringify(moveMeta, null, 2)))),
+        branch: 'main'
+      };
+      if (decSha) decBody.sha = decSha;
+
+      await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${decPath}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `token ${getToken()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(decBody)
+      });
+
+      // Update badge
+      const badge = document.getElementById('reviewBadge');
+      badge.textContent = 'Moved to ' + (selectedMovePath || currentMovePath);
+      badge.className = 'review-badge approved';
+
+      closeMoveModal();
+      showToast('Story moved to product-management/' + targetPath, 'success');
+    } catch (e) {
+      showToast('Failed to move — ' + e.message, 'error');
+    }
+    document.getElementById('loading').classList.remove('show');
+  }
+
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.innerHTML = msg;
+    t.className = `toast show ${type || ''}`;
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  checkSetup();
+</script>
+</body>
+</html>
