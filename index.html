@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Story Reviews — digiQC</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --brand: #E8450A;
+    --brand-light: #FFF4F0;
+    --bg: #F8F9FB;
+    --white: #FFFFFF;
+    --text: #1A1D23;
+    --text-sub: #6B7280;
+    --text-muted: #9CA3AF;
+    --border: #E5E7EB;
+    --radius: 12px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* Header */
+  .header { background: var(--white); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo { font-size: 16px; font-weight: 800; color: var(--brand); }
+  .header-title { font-size: 15px; font-weight: 600; color: var(--text); }
+  .header-sep { color: var(--border); }
+  .header-right { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--text-sub); }
+  .reviewer-name { font-weight: 600; color: var(--text); }
+
+  /* Setup banner */
+  .setup-banner { background: var(--brand-light); border-bottom: 1px solid #FED7AA; padding: 12px 32px; display: flex; align-items: center; gap: 12px; }
+  .setup-banner.hidden { display: none; }
+  .setup-banner input { padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; width: 180px; }
+  .setup-banner input:focus { border-color: var(--brand); }
+  .setup-banner button { background: var(--brand); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .setup-banner label { font-size: 12px; font-weight: 600; color: #92400E; }
+
+  /* Stats bar */
+  .stats-bar { padding: 20px 32px 12px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .stat-card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; min-width: 140px; flex: 1; }
+  .stat-value { font-size: 24px; font-weight: 800; color: var(--text); }
+  .stat-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+  .stat-card.review .stat-value { color: #D97706; }
+  .stat-card.changes .stat-value { color: #DC2626; }
+  .stat-card.approved .stat-value { color: #16A34A; }
+  .stat-card.moved .stat-value { color: #2563EB; }
+  .stat-card.commented .stat-value { color: #7C3AED; }
+
+  /* Filter bar */
+  .filter-bar { padding: 8px 32px 16px; display: flex; align-items: center; gap: 8px; }
+  .filter-chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--white); font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text-sub); font-family: inherit; transition: all 0.15s; }
+  .filter-chip:hover { border-color: var(--text-sub); }
+  .filter-chip.active { background: var(--text); color: var(--white); border-color: var(--text); }
+
+  /* Table */
+  .table-wrap { padding: 0 32px 32px; }
+  .table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--border); }
+  .table th { background: var(--bg); padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+  .table td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+  .table tr:last-child td { border-bottom: none; }
+  .table tr:hover td { background: #FAFBFC; }
+
+  .story-name { font-weight: 700; color: var(--text); font-size: 14px; }
+  .story-folder { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Status badges */
+  .status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .status-under-review { background: #FEF3C7; color: #92400E; }
+  .status-changes-needed { background: #FEE2E2; color: #991B1B; }
+  .status-approved { background: #DCFCE7; color: #166534; }
+  .status-moved { background: #DBEAFE; color: #1E40AF; }
+  .status-commented { background: #F3E8FF; color: #6B21A8; }
+
+  /* Comment count */
+  .comment-count { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-sub); }
+  .comment-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .comment-dot.open { background: #F59E0B; }
+  .comment-dot.resolved { background: #22C55E; }
+
+  /* Reviewer info */
+  .reviewer-info { font-size: 12px; color: var(--text-sub); }
+  .reviewer-info strong { color: var(--text); font-weight: 600; }
+
+  /* Date */
+  .date-cell { font-size: 12px; color: var(--text-sub); }
+
+  /* Actions */
+  .action-btns { display: flex; gap: 6px; }
+  .btn-copy { background: none; border: 1px solid var(--border); padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; color: var(--text-sub); font-family: inherit; display: flex; align-items: center; gap: 4px; transition: all 0.15s; white-space: nowrap; }
+  .btn-copy:hover { border-color: var(--text-sub); background: var(--bg); }
+  .btn-copy.copied { background: #DCFCE7; border-color: #86EFAC; color: #166534; }
+  .btn-open { background: var(--brand); color: white; border: none; padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .btn-open:hover { background: #C73509; }
+
+  /* Loading */
+  .loading { text-align: center; padding: 60px; color: var(--text-muted); font-size: 14px; }
+
+  /* Empty */
+  .empty-state { text-align: center; padding: 60px; color: var(--text-muted); }
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
+  .empty-state .title { font-size: 16px; font-weight: 700; color: var(--text-sub); margin-bottom: 4px; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1A1D23; color: white; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; z-index: 100; display: none; }
+  .toast.show { display: block; animation: fadeIn 0.2s; }
+  .toast.success { background: #166534; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* Moved path */
+  .moved-path { font-size: 11px; color: #1E40AF; margin-top: 2px; word-break: break-all; }
+
+  @media (max-width: 768px) {
+    .header, .stats-bar, .filter-bar, .table-wrap { padding-left: 16px; padding-right: 16px; }
+    .stat-card { min-width: 100px; padding: 10px 14px; }
+    .stat-value { font-size: 20px; }
+    .table { font-size: 12px; }
+    .table th, .table td { padding: 10px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <span class="logo">digiQC</span>
+    <span class="header-sep">|</span>
+    <span class="header-title">User Story Reviews</span>
+  </div>
+  <div class="header-right" id="headerRight">
+    <span id="reviewerDisplay"></span>
+    <button class="btn-copy" onclick="showSetup()" id="changeUserBtn" style="display:none">Change</button>
+  </div>
+</div>
+
+<!-- Setup Banner -->
+<div class="setup-banner" id="setupBanner">
+  <label>Enter your details to get started:</label>
+  <input type="text" id="setupName" placeholder="Your Name">
+  <input type="password" id="setupToken" placeholder="Access Key">
+  <button onclick="saveSetup()">Save</button>
+</div>
+
+<!-- Stats -->
+<div class="stats-bar" id="statsBar">
+  <div class="stat-card"><div class="stat-value" id="statTotal">—</div><div class="stat-label">Total Stories</div></div>
+  <div class="stat-card review"><div class="stat-value" id="statReview">—</div><div class="stat-label">Under Review</div></div>
+  <div class="stat-card commented"><div class="stat-value" id="statCommented">—</div><div class="stat-label">Has Comments</div></div>
+  <div class="stat-card changes"><div class="stat-value" id="statChanges">—</div><div class="stat-label">Changes Needed</div></div>
+  <div class="stat-card approved"><div class="stat-value" id="statApproved">—</div><div class="stat-label">Approved</div></div>
+  <div class="stat-card moved"><div class="stat-value" id="statMoved">—</div><div class="stat-label">Moved</div></div>
+</div>
+
+<!-- Filters -->
+<div class="filter-bar">
+  <button class="filter-chip active" onclick="filterStories('all', this)">All</button>
+  <button class="filter-chip" onclick="filterStories('under_review', this)">Under Review</button>
+  <button class="filter-chip" onclick="filterStories('commented', this)">Commented</button>
+  <button class="filter-chip" onclick="filterStories('changes_needed', this)">Changes Needed</button>
+  <button class="filter-chip" onclick="filterStories('approved', this)">Approved</button>
+  <button class="filter-chip" onclick="filterStories('moved', this)">Moved</button>
+</div>
+
+<!-- Table -->
+<div class="table-wrap">
+  <table class="table" id="storyTable">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>User Story</th>
+        <th>Status</th>
+        <th>Comments</th>
+        <th>Reviewer</th>
+        <th>Last Updated</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="storyTableBody">
+      <tr><td colspan="7"><div class="loading">Loading stories...</div></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const REPO_OWNER = 'Hathi-Jigar';
+  const REPO_NAME = 'userstory-reviews';
+  const PAGES_BASE = `https://${REPO_OWNER.toLowerCase()}.github.io/${REPO_NAME}`;
+
+  let allStories = [];
+  let currentFilter = 'all';
+
+  function getToken() { return localStorage.getItem('review_token'); }
+  function getName() { return localStorage.getItem('reviewer_name'); }
+
+  function checkSetup() {
+    if (getToken() && getName()) {
+      document.getElementById('setupBanner').classList.add('hidden');
+      document.getElementById('reviewerDisplay').innerHTML = 'Reviewing as: <span class="reviewer-name">' + getName() + '</span>';
+      document.getElementById('changeUserBtn').style.display = '';
+      loadStories();
+    }
+  }
+
+  function showSetup() {
+    document.getElementById('setupBanner').classList.remove('hidden');
+  }
+
+  function saveSetup() {
+    const name = document.getElementById('setupName').value.trim();
+    const token = document.getElementById('setupToken').value.trim();
+    if (!name || !token) { showToast('Both fields are required'); return; }
+    localStorage.setItem('reviewer_name', name);
+    localStorage.setItem('review_token', token);
+    document.getElementById('setupBanner').classList.add('hidden');
+    document.getElementById('reviewerDisplay').innerHTML = 'Reviewing as: <span class="reviewer-name">' + name + '</span>';
+    document.getElementById('changeUserBtn').style.display = '';
+    loadStories();
+  }
+
+  async function loadStories() {
+    try {
+      // Get all folders in /reviews
+      const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/reviews`, {
+        headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (!res.ok) throw new Error('Failed to load');
+      const items = await res.json();
+      const folders = items.filter(i => i.type === 'dir' && i.name !== '.template');
+
+      allStories = [];
+      // Load decision.json and comments.json for each
+      await Promise.all(folders.map(async (folder) => {
+        const story = {
+          name: folder.name,
+          displayName: folder.name.replace(/^us-/, '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+          folder: folder.name,
+          reviewUrl: `${PAGES_BASE}/reviews/${folder.name}/`,
+          decision: 'under_review',
+          reviewer: null,
+          timestamp: null,
+          movedTo: null,
+          openComments: 0,
+          resolvedComments: 0,
+          totalComments: 0
+        };
+
+        // Load decision
+        try {
+          const decRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/reviews/${folder.name}/decision.json`, {
+            headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github.v3+json' }
+          });
+          if (decRes.ok) {
+            const decData = await decRes.json();
+            const dec = JSON.parse(decodeURIComponent(escape(atob(decData.content))));
+            story.decision = dec.decision || 'under_review';
+            story.reviewer = dec.reviewer || dec.movedBy || null;
+            story.timestamp = dec.timestamp || null;
+            story.movedTo = dec.movedTo || null;
+          }
+        } catch (e) {}
+
+        // Load comments
+        try {
+          const comRes = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/reviews/${folder.name}/comments.json`, {
+            headers: { 'Authorization': `token ${getToken()}`, 'Accept': 'application/vnd.github.v3+json' }
+          });
+          if (comRes.ok) {
+            const comData = await comRes.json();
+            const comments = JSON.parse(decodeURIComponent(escape(atob(comData.content))));
+            story.totalComments = comments.length;
+            story.openComments = comments.filter(c => c.status === 'open').length;
+            story.resolvedComments = comments.filter(c => c.status === 'resolved').length;
+          }
+        } catch (e) {}
+
+        // Derive effective status
+        if (story.decision === 'moved') {
+          story.effectiveStatus = 'moved';
+        } else if (story.decision === 'approved') {
+          story.effectiveStatus = 'approved';
+        } else if (story.decision === 'changes_needed') {
+          story.effectiveStatus = 'changes_needed';
+        } else if (story.totalComments > 0 && story.decision === 'under_review') {
+          story.effectiveStatus = 'commented';
+        } else {
+          story.effectiveStatus = 'under_review';
+        }
+
+        allStories.push(story);
+      }));
+
+      // Sort: under_review/commented/changes_needed first, then approved, then moved
+      const order = { under_review: 0, commented: 1, changes_needed: 2, approved: 3, moved: 4 };
+      allStories.sort((a, b) => (order[a.effectiveStatus] || 0) - (order[b.effectiveStatus] || 0));
+
+      updateStats();
+      renderTable();
+    } catch (e) {
+      document.getElementById('storyTableBody').innerHTML = `<tr><td colspan="7"><div class="loading" style="color:#991B1B">Failed to load stories. Check your access key.</div></td></tr>`;
+    }
+  }
+
+  function updateStats() {
+    document.getElementById('statTotal').textContent = allStories.length;
+    document.getElementById('statReview').textContent = allStories.filter(s => s.effectiveStatus === 'under_review').length;
+    document.getElementById('statCommented').textContent = allStories.filter(s => s.effectiveStatus === 'commented').length;
+    document.getElementById('statChanges').textContent = allStories.filter(s => s.effectiveStatus === 'changes_needed').length;
+    document.getElementById('statApproved').textContent = allStories.filter(s => s.effectiveStatus === 'approved').length;
+    document.getElementById('statMoved').textContent = allStories.filter(s => s.effectiveStatus === 'moved').length;
+  }
+
+  function filterStories(filter, el) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    renderTable();
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('storyTableBody');
+    const filtered = currentFilter === 'all' ? allStories : allStories.filter(s => s.effectiveStatus === currentFilter);
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="icon">📋</div><div class="title">No stories found</div></div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map((s, i) => {
+      const statusBadge = getStatusBadge(s.effectiveStatus, s.reviewer);
+      const commentHtml = getCommentHtml(s);
+      const reviewerHtml = s.reviewer ? `<div class="reviewer-info"><strong>${s.reviewer}</strong></div>` : '<span style="color:var(--text-muted);font-size:12px">—</span>';
+      const dateHtml = s.timestamp ? `<div class="date-cell">${formatDate(s.timestamp)}</div>` : '<span style="color:var(--text-muted);font-size:12px">—</span>';
+      const movedHtml = s.movedTo ? `<div class="moved-path">→ ${s.movedTo}</div>` : '';
+
+      return `<tr>
+        <td style="font-size:12px;color:var(--text-muted);font-weight:600">${i + 1}</td>
+        <td>
+          <div class="story-name">${s.displayName}</div>
+          <div class="story-folder">reviews/${s.folder}/</div>
+          ${movedHtml}
+        </td>
+        <td>${statusBadge}</td>
+        <td>${commentHtml}</td>
+        <td>${reviewerHtml}</td>
+        <td>${dateHtml}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-copy" onclick="copyLink('${s.reviewUrl}', this)" title="Copy review link">📋 Copy Link</button>
+            <a href="${s.reviewUrl}" target="_blank" class="btn-open">Open →</a>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function getStatusBadge(status, reviewer) {
+    const map = {
+      'under_review': { cls: 'status-under-review', icon: '🔍', label: 'Under Review' },
+      'commented': { cls: 'status-commented', icon: '💬', label: 'Has Comments' },
+      'changes_needed': { cls: 'status-changes-needed', icon: '⚠️', label: 'Changes Needed' },
+      'approved': { cls: 'status-approved', icon: '✅', label: 'Approved' },
+      'moved': { cls: 'status-moved', icon: '📦', label: 'Moved' }
+    };
+    const s = map[status] || map['under_review'];
+    return `<span class="status-badge ${s.cls}">${s.icon} ${s.label}</span>`;
+  }
+
+  function getCommentHtml(story) {
+    if (story.totalComments === 0) {
+      return '<span style="color:var(--text-muted);font-size:12px">No comments</span>';
+    }
+    let html = '<div class="comment-count">';
+    if (story.openComments > 0) {
+      html += `<span class="comment-dot open"></span> ${story.openComments} open`;
+    }
+    if (story.resolvedComments > 0) {
+      html += `${story.openComments > 0 ? ' · ' : '<span class="comment-dot resolved"></span> '}${story.resolvedComments} resolved`;
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function formatDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + ', ' +
+           d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function copyLink(url, btn) {
+    navigator.clipboard.writeText(url).then(() => {
+      btn.classList.add('copied');
+      btn.innerHTML = '✓ Copied';
+      setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '📋 Copy Link'; }, 2000);
+    });
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show';
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  checkSetup();
+</script>
+</body>
+</html>
