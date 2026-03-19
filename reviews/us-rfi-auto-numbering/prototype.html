@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>digiQC – RFI Auto-Numbering Prototype</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Rubik', 'Segoe UI', sans-serif; background: #f5f6f8; color: #1a2233; font-size: 14px; min-height: 100vh; }
+:root {
+  --brand: #FC5027; --brand-dark: #e0421e; --brand-light: #fff3f0;
+  --dark: #1a2233; --mid: #4b5568; --muted: #9ca3af;
+  --border: #e2e8f0; --bg: #f5f6f8; --white: #fff;
+  --warning-bg: #fff3cd; --warning-text: #856404; --warning-border: #ffc107;
+  --info-bg: #e8f4fd; --info-text: #1d6fa4;
+  --disabled-bg: #f1f5f9; --disabled-text: #94a3b8;
+  --toggle-on: #1a2233; --toggle-off: #cbd5e1;
+  --radius: 8px; --shadow: 0 1px 4px rgba(0,0,0,0.08); --shadow-md: 0 4px 20px rgba(0,0,0,0.13);
+}
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ── Landing ── */
+.landing { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg); padding: 32px; }
+.landing-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+.logo-box { width: 48px; height: 48px; background: var(--brand); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; font-weight: 900; }
+.landing-desc { font-size: 13px; color: var(--mid); margin-bottom: 28px; text-align: center; max-width: 500px; line-height: 1.7; }
+.screen-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; width: 100%; max-width: 700px; }
+.sc-card { background: #fff; border: 1.5px solid var(--border); border-radius: 12px; padding: 24px; cursor: pointer; transition: all 0.18s; }
+.sc-card:hover { border-color: var(--brand); box-shadow: 0 6px 20px rgba(252,80,39,0.13); transform: translateY(-2px); }
+.sc-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 14px; }
+.sc-title { font-size: 15px; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
+.sc-desc { font-size: 12px; color: var(--mid); line-height: 1.55; }
+.sc-role { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; display: inline-block; margin-top: 12px; }
+
+/* ── Top Nav ── */
+.top-nav { background: #fff; border-bottom: 1px solid var(--border); padding: 0 24px; display: flex; align-items: center; height: 52px; position: sticky; top: 0; z-index: 100; }
+.logo { display: flex; align-items: center; gap: 8px; margin-right: 28px; }
+.logo-icon { width: 34px; height: 34px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 900; }
+.logo-name { font-size: 15px; font-weight: 800; line-height: 1.1; }
+.logo-tag { font-size: 9px; color: var(--muted); font-weight: 400; }
+.nav-links { display: flex; }
+.nav-lnk { padding: 0 16px; height: 52px; display: flex; align-items: center; font-size: 13px; font-weight: 500; color: var(--mid); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; }
+.nav-lnk.active { color: var(--brand); border-bottom-color: var(--brand); font-weight: 600; }
+.nav-lnk:hover:not(.active) { color: var(--dark); }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.av { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+.back-btn { font-size: 12px; color: var(--mid); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; cursor: pointer; transition: all 0.15s; }
+.back-btn:hover { color: var(--brand); border-color: var(--brand); background: var(--brand-light); }
+
+/* ── Breadcrumb ── */
+.breadcrumb { padding: 10px 24px; display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); background: #fff; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.breadcrumb b { color: var(--dark); font-weight: 600; font-size: 13px; }
+
+/* ── Tabs ── */
+.tab-bar { border-bottom: 1px solid var(--border); padding: 0 24px; background: #fff; display: flex; }
+.tab-item { padding: 11px 18px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+.tab-item.active { color: var(--brand); border-bottom-color: var(--brand); font-weight: 600; }
+.tab-item:hover:not(.active) { color: var(--dark); }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* ── Body layouts ── */
+.page-body { padding: 20px 24px; display: grid; gap: 20px; }
+.col-3 { grid-template-columns: 290px 1fr 360px; }
+.col-2 { grid-template-columns: 1fr 390px; }
+.col-1 { grid-template-columns: 1fr; }
+
+/* ── Card ── */
+.card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+.card-title { font-size: 13px; font-weight: 700; color: var(--dark); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.f-lbl { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px; }
+.f-val { font-size: 13px; font-weight: 600; color: var(--dark); margin-bottom: 14px; }
+
+/* ── Toggle ── */
+.toggle { width: 38px; height: 20px; background: var(--toggle-off); border-radius: 10px; cursor: pointer; position: relative; transition: background 0.2s; flex-shrink: 0; display: inline-block; }
+.toggle.on { background: var(--toggle-on); }
+.toggle.no-click { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+.toggle::after { content: ''; width: 16px; height: 16px; background: #fff; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: left 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.toggle.on::after { left: 20px; }
+
+/* ── Addon list ── */
+.addon-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); min-height: 36px; }
+.addon-row:last-child { border-bottom: none; }
+.a-lbl { font-size: 13px; color: var(--dark); display: flex; align-items: center; gap: 6px; }
+.a-lbl.sub { padding-left: 14px; font-size: 12px; color: var(--mid); }
+.a-lbl.sub2 { padding-left: 26px; font-size: 12px; color: var(--mid); }
+.a-num { font-size: 13px; font-weight: 600; color: var(--mid); }
+.sec-head { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; padding-top: 10px; border-bottom: none !important; }
+.new-badge { background: var(--brand); color: #fff; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+
+/* ── Buttons ── */
+.btn { padding: 8px 18px; border-radius: var(--radius); font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; line-height: 1; }
+.btn-primary { background: var(--brand); color: #fff; }
+.btn-primary:hover { background: var(--brand-dark); }
+.btn-secondary { background: #fff; color: var(--dark); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--bg); }
+.btn-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Forms ── */
+.fg { margin-bottom: 15px; }
+.fl { font-size: 12px; font-weight: 600; color: var(--mid); margin-bottom: 5px; display: flex; align-items: center; gap: 4px; }
+.req { color: var(--brand); }
+.fi { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; color: var(--dark); outline: none; background: #fff; font-family: inherit; transition: border 0.15s; }
+.fi:focus { border-color: var(--brand); }
+.fi:disabled { background: var(--disabled-bg); color: var(--disabled-text); }
+.perm-row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 4px; }
+.perm-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--mid); font-weight: 500; }
+.divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+/* ── Scenario bar ── */
+.scenario-bar { background: #fff; border-bottom: 1px solid var(--border); padding: 10px 24px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.s-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px; white-space: nowrap; }
+.pill { padding: 5px 13px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1.5px solid var(--border); color: var(--mid); background: #fff; transition: all 0.15s; white-space: nowrap; }
+.pill.active { border-color: var(--brand); color: var(--brand); background: var(--brand-light); }
+.pill:hover:not(.active) { border-color: var(--mid); color: var(--dark); }
+
+/* ── Config trigger ── */
+.cfg-trigger { margin-top: 10px; padding: 12px 14px; border: 1.5px dashed var(--brand); border-radius: var(--radius); background: var(--brand-light); display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: all 0.15s; }
+.cfg-trigger:hover { background: #ffe0d6; }
+.cfg-trigger.locked-t { border-color: var(--border); background: var(--disabled-bg); cursor: pointer; }
+.cfg-trigger.locked-t:hover { background: #eef2f7; }
+.ct-l { display: flex; align-items: center; gap: 10px; }
+.ct-ico { width: 32px; height: 32px; border-radius: 6px; background: var(--brand); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; flex-shrink: 0; }
+.ct-ico.grey { background: var(--muted); }
+.ct-title { font-size: 13px; font-weight: 600; color: var(--dark); }
+.ct-sub { font-size: 11px; color: var(--mid); margin-top: 2px; }
+.cfg-tag { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+.tag-ok { background: #d1fae5; color: #065f46; }
+.tag-no { background: #fee2e2; color: #991b1b; }
+.tag-lock { background: var(--bg); color: var(--mid); border: 1px solid var(--border); }
+
+/* ── Banners ── */
+.banner { padding: 10px 14px; border-radius: 6px; font-size: 12px; display: flex; align-items: flex-start; gap: 8px; line-height: 1.6; margin-bottom: 14px; }
+.bn-warn { background: var(--warning-bg); color: var(--warning-text); border: 1px solid var(--warning-border); }
+.bn-info { background: var(--info-bg); color: var(--info-text); border: 1px solid #bfdbfe; }
+.bn-ok { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+.bn-neutral { background: var(--bg); color: var(--mid); border: 1px solid var(--border); }
+
+/* ── Modal ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.open { display: flex; }
+.modal { background: #fff; border-radius: 12px; width: 100%; max-width: 680px; max-height: 92vh; overflow-y: auto; box-shadow: var(--shadow-md); }
+.modal-sm { max-width: 440px; }
+.modal-hdr { padding: 16px 20px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: #fff; z-index: 10; }
+.modal-title { font-size: 15px; font-weight: 700; color: var(--dark); }
+.modal-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.modal-close { width: 28px; height: 28px; border-radius: 50%; background: var(--bg); border: none; cursor: pointer; font-size: 14px; color: var(--mid); display: flex; align-items: center; justify-content: center; }
+.modal-close:hover { background: var(--border); }
+.modal-body { padding: 20px; }
+.modal-footer { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: flex-end; gap: 10px; position: sticky; bottom: 0; background: #fff; }
+
+/* ── Level rows ── */
+.lv-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; }
+.lv-num { width: 22px; height: 22px; background: var(--dark); color: #fff; border-radius: 50%; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 6px; }
+.lv-inner { flex: 1; }
+.lv-sel { width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; color: var(--dark); background: #fff; outline: none; cursor: pointer; font-family: inherit; }
+.lv-sel:focus { border-color: var(--brand); }
+.lv-rm { width: 26px; height: 26px; background: #fee2e2; border: none; border-radius: 50%; color: #dc2626; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 4px; line-height: 1; font-weight: 700; }
+.lv-rm:hover { background: #fecaca; }
+.sv-row { display: flex; align-items: center; gap: 8px; margin-top: 7px; padding: 6px 10px; background: var(--info-bg); border-radius: 6px; font-size: 12px; color: var(--info-text); }
+.sv-inp { width: 70px; padding: 4px 8px; border: 1px solid #93c5fd; border-radius: 4px; font-size: 12px; font-weight: 600; text-align: center; background: #fff; font-family: inherit; }
+.nom-warn-row { display: flex; align-items: center; gap: 6px; background: #fffbeb; border: 1px solid #fbbf24; border-radius: 5px; padding: 5px 10px; font-size: 11px; color: #92400e; margin-top: 6px; }
+.add-lv-btn { width: 100%; padding: 8px; border: 1.5px dashed var(--border); border-radius: 6px; background: transparent; color: var(--mid); font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.15s; margin-top: 4px; }
+.add-lv-btn:hover:not(:disabled) { border-color: var(--brand); color: var(--brand); background: var(--brand-light); }
+.add-lv-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Preview ── */
+.prev-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+.prev-lbl { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.prev-num { font-size: 18px; font-weight: 700; color: var(--dark); letter-spacing: 0.02em; word-break: break-all; min-height: 28px; }
+.prev-num .sep { color: var(--brand); margin: 0 2px; }
+.prev-num .seg-ref { color: var(--muted); font-style: italic; }
+.prev-empty { font-size: 13px; color: var(--muted); font-style: italic; }
+
+/* ── Confirm ── */
+.conf-ico { width: 52px; height: 52px; border-radius: 50%; background: var(--brand-light); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; font-size: 22px; }
+.conf-prev { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; margin: 14px 0; font-size: 15px; font-weight: 700; color: var(--dark); text-align: center; word-break: break-all; }
+
+/* ── Read-only chip ── */
+.ro-chip { display: inline-flex; align-items: center; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 5px 12px; font-size: 12px; font-weight: 600; color: var(--mid); }
+
+/* ── Toast ── */
+.toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; z-index: 999; display: none; align-items: center; gap: 8px; box-shadow: var(--shadow-md); max-width: 380px; line-height: 1.5; }
+.toast.show { display: flex; }
+.t-ok { background: #065f46; color: #fff; }
+.t-warn { background: #92400e; color: #fff; }
+.t-info { background: var(--dark); color: #fff; }
+
+/* ── Select wrapper for nom tooltip ── */
+.sel-wrap { position: relative; }
+.nom-hover-tip { margin-top: 5px; font-size: 11px; color: #92400e; background: #fef3c7; border: 1px solid #fbbf24; border-radius: 5px; padding: 4px 10px; display: flex; align-items: center; gap: 5px; }
+
+/* Footer */
+.pg-footer { padding: 10px 24px; font-size: 11px; color: var(--muted); text-align: right; border-top: 1px solid var(--border); background: #fff; }
+
+@media (max-width: 960px) {
+  .col-3, .col-2 { grid-template-columns: 1fr; }
+  .page-body { padding: 14px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════
+     LANDING
+═══════════════════════════ -->
+<div id="screen-landing" class="screen active">
+  <div class="landing">
+    <div class="landing-logo">
+      <div class="logo-box">dQ</div>
+      <div>
+        <div style="font-size:22px;font-weight:900;color:var(--brand)">digiQC</div>
+        <div style="font-size:11px;color:var(--muted)">focus on quality</div>
+      </div>
+    </div>
+    <div class="landing-desc">
+      <strong style="color:var(--dark)">RFI Auto-Numbering — Interactive Prototype</strong><br>
+      Two separate screens based on role. Click a card to begin.
+    </div>
+    <div class="screen-cards">
+
+      <div class="sc-card" onclick="goTo('screen-sa')">
+        <div class="sc-icon" style="background:#fee2e2">⚙️</div>
+        <div class="sc-title">Screen 1 — Super Admin Panel</div>
+        <div class="sc-desc">Organisation-level control. Enable RFI and RFI Auto-Numbering toggles. Nomenclature toggle also lives here — toggling it off disables Nom levels in the configurator.</div>
+        <div class="sc-role" style="background:#fee2e2;color:#991b1b">Super Admin (digiQC)</div>
+      </div>
+
+      <div class="sc-card" onclick="goTo('screen-project')">
+        <div class="sc-icon" style="background:#d1fae5">🏗️</div>
+        <div class="sc-title">Screen 2 — Project Setup</div>
+        <div class="sc-desc">System Admin configures RFI Numbering Format per project. Use the scenario bar to explore all 5 states including Nomenclature inactive.</div>
+        <div class="sc-role" style="background:#d1fae5;color:#065f46">System Admin</div>
+      </div>
+
+    </div>
+    <div style="margin-top:24px;font-size:11px;color:var(--muted)">digiQC © 2026 (v3.10.1) · Product by <span style="color:var(--brand);font-weight:700">SPACEIFY</span></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════
+     SCREEN 1 — SUPER ADMIN
+═══════════════════════════ -->
+<div id="screen-sa" class="screen">
+
+  <nav class="top-nav">
+    <div class="logo">
+      <div class="logo-icon" style="background:var(--brand)">dQ</div>
+      <div><div class="logo-name" style="color:var(--brand)">digiQC</div><div class="logo-tag">focus on quality</div></div>
+    </div>
+    <div class="nav-links">
+      <div class="nav-lnk active">Organizations</div>
+      <div class="nav-lnk">SuperAdmins</div>
+      <div class="nav-lnk">Gallery <span style="font-size:10px;background:#e2e8f0;padding:1px 5px;border-radius:3px;margin-left:4px">BETA</span></div>
+    </div>
+    <div class="nav-right">
+      <button class="back-btn" onclick="goTo('screen-landing')">← All Screens</button>
+      <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mid)">
+        <div class="av" style="background:#fee2e2;color:#991b1b">SA</div> Account
+      </div>
+    </div>
+  </nav>
+
+  <div class="breadcrumb">
+    🌐 &nbsp;›&nbsp; <b>Sumedha Infra Projects</b>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <button class="btn btn-danger btn-sm">Deactivate</button>
+      <button class="btn btn-primary btn-sm">Edit</button>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab-item active" onclick="switchTab(this,'sa-details')">Details</div>
+    <div class="tab-item" onclick="switchTab(this,'sa-users')">Users</div>
+  </div>
+
+  <div id="sa-details" class="tab-pane active">
+    <div class="page-body col-3">
+
+      <!-- Org info -->
+      <div class="card">
+        <div class="card-title">Organization Details</div>
+        <div class="f-lbl">Organization Name:</div><div class="f-val">Sumedha Infra Projects</div>
+        <div class="f-lbl">System Admin Name:</div><div class="f-val">Ritwik Dusane</div>
+        <div class="f-lbl">System Admin Email:</div><div class="f-val">ritwik@sumedhainfra.com</div>
+        <div class="f-lbl">System Admin Mobile Number:</div><div class="f-val">+918602544934</div>
+        <div class="f-lbl">Organization Type:</div><div class="f-val">Contractor</div>
+        <div class="f-lbl">TimeZone:</div><div class="f-val">Asia/Kolkata</div>
+      </div>
+
+      <!-- Subscription -->
+      <div class="card">
+        <div class="card-title">Subscription Details</div>
+        <div class="f-lbl">Current Plan:</div><div class="f-val">Elite</div>
+        <div class="f-lbl">Users:</div><div class="f-val">3 / 16</div>
+        <div class="f-lbl">Projects:</div><div class="f-val">0 / 5</div>
+        <div class="f-lbl">Valid Till:</div><div class="f-val">15/03/2027</div>
+      </div>
+
+      <!-- Addon Services -->
+      <div class="card" style="padding:16px 18px">
+        <div class="card-title">Addon Services</div>
+
+        <div class="addon-row"><span class="sec-head">1. Access Type</span></div>
+        <div class="addon-row"><span class="a-lbl sub">a. Inspection</span><div class="toggle on" onclick="toggleG(this)"></div></div>
+        <div class="addon-row"><span class="a-lbl sub">b. Instruction</span><div class="toggle on" onclick="toggleG(this)"></div></div>
+        <div class="addon-row"><span class="a-lbl sub">c. Register</span><div class="toggle on" onclick="toggleG(this)"></div></div>
+        <div class="addon-row"><span class="a-lbl sub2">Register Limit</span><span class="a-num">4</span></div>
+
+        <div class="addon-row"><span class="sec-head">2. Whatsapp</span></div>
+        <div class="addon-row"><span class="a-lbl sub">a. Inspection</span><div class="toggle" onclick="toggleG(this)"></div></div>
+        <div class="addon-row"><span class="a-lbl sub">b. Instruction</span><div class="toggle on" onclick="toggleG(this)"></div></div>
+
+        <div class="addon-row"><span class="sec-head">3. Photo limit</span></div>
+        <div class="addon-row"><span class="a-lbl sub">a. Inspection</span><span class="a-num">5</span></div>
+        <div class="addon-row"><span class="a-lbl sub">b. Instruction</span><span class="a-num">5</span></div>
+        <div class="addon-row"><span class="a-lbl sub">c. Register Approver</span><span class="a-num">5</span></div>
+
+        <div class="addon-row"><span class="sec-head">4. Approver Limit</span></div>
+        <div class="addon-row"><span class="a-lbl sub">a. Inspection</span><span class="a-num">3</span></div>
+        <div class="addon-row"><span class="a-lbl sub">b. Register</span><span class="a-num">3</span></div>
+
+        <div class="addon-row"><span class="sec-head">5. Checklist</span></div>
+        <div class="addon-row"><span class="a-lbl sub">a. Stage Limit</span><span class="a-num">5</span></div>
+
+        <div class="addon-row"><span class="a-lbl">6. Gallery access for inspection</span><div class="toggle" onclick="toggleG(this)"></div></div>
+        <div class="addon-row"><span class="a-lbl">7. Target</span><div class="toggle on" onclick="toggleG(this)"></div></div>
+
+        <!-- 8. Nomenclature — drives nom state in configurator -->
+        <div class="addon-row">
+          <span class="a-lbl">8. Nomenclature</span>
+          <div class="toggle on" id="sa-nom" onclick="toggleNom(this)"></div>
+        </div>
+
+        <div class="addon-row"><span class="a-lbl">9. Instruction Tags</span><div class="toggle on" onclick="toggleG(this)"></div></div>
+        <div class="addon-row"><span class="a-lbl">10. Instruction Recommendation</span><div class="toggle on" onclick="toggleG(this)"></div></div>
+
+        <!-- 11. RFI -->
+        <div class="addon-row">
+          <span class="a-lbl">11. RFI</span>
+          <div class="toggle" id="sa-rfi" onclick="toggleRFI(this)"></div>
+        </div>
+
+        <!-- 11a. RFI Auto-Numbering — visible only when RFI is ON -->
+        <div class="addon-row" id="sa-rfi-num-row" style="display:none">
+          <span class="a-lbl sub" style="display:flex;align-items:center">
+            a. RFI Auto-Numbering
+            <span class="new-badge" style="margin-left:7px">NEW</span>
+          </span>
+          <div class="toggle" id="sa-rfi-num" onclick="toggleRFINum(this)"></div>
+        </div>
+
+        <div class="addon-row"><span class="a-lbl">12. Report Configuration</span><div class="toggle" onclick="toggleG(this)"></div></div>
+        <div class="addon-row"><span class="a-lbl">13. Report DigiQC branding</span><div class="toggle on" onclick="toggleG(this)"></div></div>
+        <div class="addon-row"><span class="a-lbl">14. Instruction Type</span><div class="toggle" onclick="toggleG(this)"></div></div>
+        <div class="addon-row"><span class="a-lbl">15. Quality Cost</span><div class="toggle" onclick="toggleG(this)"></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="sa-users" class="tab-pane">
+    <div class="page-body col-1">
+      <div class="card" style="text-align:center;padding:40px;color:var(--muted)">👥 User management — out of scope for this prototype</div>
+    </div>
+  </div>
+
+  <div class="pg-footer">Super Admin Panel &nbsp;·&nbsp; digiQC © 2026 prototype</div>
+</div>
+
+
+<!-- ═══════════════════════════
+     SCREEN 2 — PROJECT SETUP
+═══════════════════════════ -->
+<div id="screen-project" class="screen">
+
+  <nav class="top-nav">
+    <div class="logo">
+      <div class="logo-icon" style="background:#1a6ba4">SS</div>
+      <div><div class="logo-name" style="color:#1a6ba4">SSACT</div><div class="logo-tag">ISO 9001:2015</div></div>
+    </div>
+    <div class="nav-links">
+      <div class="nav-lnk active">Projects</div>
+      <div class="nav-lnk">Setup</div>
+      <div class="nav-lnk">Logs</div>
+      <div class="nav-lnk">Dashboard</div>
+      <div class="nav-lnk">Reports</div>
+      <div class="nav-lnk">To Do <span style="background:var(--brand);color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;margin-left:3px">1</span></div>
+    </div>
+    <div class="nav-right">
+      <button class="back-btn" onclick="goTo('screen-landing')">← All Screens</button>
+      <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mid)">
+        <div class="av" style="background:#d1fae5;color:#065f46">SA</div> System Admin
+      </div>
+    </div>
+  </nav>
+
+  <div class="breadcrumb">📁 &nbsp;›&nbsp; <span style="color:var(--brand);font-weight:600">MVP</span> &nbsp;›&nbsp; <b>Edit Project</b></div>
+
+  <!-- Scenario bar -->
+  <div class="scenario-bar">
+    <span class="s-label">Scenario:</span>
+    <div class="pill active" onclick="switchScenario(this,'sc-rfi-off')">RFI OFF</div>
+    <div class="pill" onclick="switchScenario(this,'sc-not-cfg')">RFI ON · Not Configured</div>
+    <div class="pill" onclick="switchScenario(this,'sc-configured')">RFI ON · Configured</div>
+    <div class="pill" onclick="switchScenario(this,'sc-locked')">RFI ON · Locked</div>
+    <div class="pill" onclick="switchScenario(this,'sc-nom-off')">RFI ON · Nomenclature Inactive</div>
+  </div>
+
+  <!-- ── RFI OFF ── -->
+  <div id="sc-rfi-off" class="tab-pane active">
+    <div class="page-body col-2">
+      <div class="card">
+        <div class="card-title">Project Details</div>
+        <div class="fg"><div class="fl"><span class="req">*</span> Name</div><input class="fi" value="MVP"></div>
+        <div class="fg"><div class="fl"><span class="req">*</span> Unique Code</div><input class="fi" value="MVP"></div>
+        <div class="fg"><div class="fl"><span class="req">*</span> Client Name</div><input class="fi" value="Spaciefy Technology 1"></div>
+        <div class="fg"><div class="fl">Description</div><textarea class="fi" rows="3" style="resize:vertical"></textarea></div>
+        <div class="fg">
+          <div class="fl">Permissions</div>
+          <div class="perm-row">
+            <div class="perm-item">Location: <div class="toggle on" onclick="toggleG(this)" style="margin-left:6px"></div></div>
+            <div class="perm-item">Authentication: <div class="toggle on" onclick="toggleG(this)" style="margin-left:6px"></div></div>
+            <div class="perm-item">RFI: <div class="toggle" id="proj-rfi-toggle" style="margin-left:6px" onclick="toggleRFI_project(this)"></div></div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Block shown when RFI is OFF -->
+        <div id="proj-rfi-off-block">
+          <div class="banner bn-neutral" style="margin-bottom:0">
+            <span style="font-size:15px">🔒</span>
+            <span>RFI Auto-Numbering is not available. Turn <strong>RFI ON</strong> in Permissions above to configure a numbering format for this project.</span>
+          </div>
+        </div>
+
+        <!-- Block shown when RFI is turned ON live -->
+        <div id="proj-cfg-block" style="display:none">
+          <div class="fl" style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+            RFI Numbering Format <span class="cfg-tag tag-no">Not Configured</span>
+          </div>
+          <div class="cfg-trigger" onclick="openCfg('edit',false,false)">
+            <div class="ct-l">
+              <div class="ct-ico">🔢</div>
+              <div>
+                <div class="ct-title">Configure RFI Numbering Format</div>
+                <div class="ct-sub">Set up before the first RFI is raised</div>
+              </div>
+            </div>
+            <span style="color:var(--brand);font-size:20px;font-weight:700">›</span>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
+          <button class="btn btn-secondary">Cancel</button>
+          <button class="btn btn-primary">Save</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Site Details</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="fg"><div class="fl"><span class="req">*</span> Radius (m)</div><input class="fi" value="1000000"></div>
+          <div class="fg"><div class="fl"><span class="req">*</span> TimeZone</div><select class="fi"><option>Asia/Kolkata (GMT+05:30)</option></select></div>
+        </div>
+        <div style="background:#e8f0f8;border-radius:8px;height:210px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;border:1px solid var(--border)">🗺️ Map — Surat, Gujarat</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+          <div><div class="f-lbl">Latitude:</div><div class="f-val" style="font-size:12px">21.1702401</div></div>
+          <div><div class="f-lbl">Longitude:</div><div class="f-val" style="font-size:12px">72.8310607</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RFI ON · Not Configured ── -->
+  <div id="sc-not-cfg" class="tab-pane">
+    <div class="page-body col-2">
+      <div class="card">
+        <div class="card-title">Project Details</div>
+        <div class="fg"><div class="fl"><span class="req">*</span> Name</div><input class="fi" value="MVP"></div>
+        <div class="fg"><div class="fl"><span class="req">*</span> Unique Code</div><input class="fi" value="MVP"></div>
+        <div class="fg"><div class="fl"><span class="req">*</span> Client Name</div><input class="fi" value="Spaciefy Technology 1"></div>
+        <div class="fg">
+          <div class="fl">Permissions</div>
+          <div class="perm-row">
+            <div class="perm-item">Location: <div class="toggle on" onclick="toggleG(this)" style="margin-left:6px"></div></div>
+            <div class="perm-item">Authentication: <div class="toggle on" onclick="toggleG(this)" style="margin-left:6px"></div></div>
+            <div class="perm-item">RFI: <div class="toggle on" style="margin-left:6px"></div></div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="fl" style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+          RFI Numbering Format <span class="cfg-tag tag-no">Not Configured</span>
+        </div>
+        <div class="cfg-trigger" onclick="openCfg('edit',false,false)">
+          <div class="ct-l">
+            <div class="ct-ico">🔢</div>
+            <div>
+              <div class="ct-title">Configure RFI Numbering Format</div>
+              <div class="ct-sub">Set up before the first RFI is raised</div>
+            </div>
+          </div>
+          <span style="color:var(--brand);font-size:20px;font-weight:700">›</span>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
+          <button class="btn btn-secondary">Cancel</button>
+          <button class="btn btn-primary">Save</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Site Details</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="fg"><div class="fl"><span class="req">*</span> Radius (m)</div><input class="fi" value="1000000"></div>
+          <div class="fg"><div class="fl"><span class="req">*</span> TimeZone</div><select class="fi"><option>Asia/Kolkata (GMT+05:30)</option></select></div>
+        </div>
+        <div style="background:#e8f0f8;border-radius:8px;height:210px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;border:1px solid var(--border)">🗺️ Map — Surat, Gujarat</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+          <div><div class="f-lbl">Latitude:</div><div class="f-val" style="font-size:12px">21.1702401</div></div>
+          <div><div class="f-lbl">Longitude:</div><div class="f-val" style="font-size:12px">72.8310607</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RFI ON · Configured ── -->
+  <div id="sc-configured" class="tab-pane">
+    <div class="page-body col-2">
+      <div class="card">
+        <div class="card-title">Project Details</div>
+        <div class="fg"><div class="fl"><span class="req">*</span> Name</div><input class="fi" value="MVP"></div>
+        <div class="fg"><div class="fl"><span class="req">*</span> Unique Code</div><input class="fi" value="MVP"></div>
+        <div class="fg"><div class="fl"><span class="req">*</span> Client Name</div><input class="fi" value="Spaciefy Technology 1"></div>
+        <div class="fg">
+          <div class="fl">Permissions</div>
+          <div class="perm-row">
+            <div class="perm-item">Location: <div class="toggle on" onclick="toggleG(this)" style="margin-left:6px"></div></div>
+            <div class="perm-item">Authentication: <div class="toggle on" onclick="toggleG(this)" style="margin-left:6px"></div></div>
+            <div class="perm-item">RFI: <div class="toggle on" style="margin-left:6px"></div></div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="fl" style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+          RFI Numbering Format <span class="cfg-tag tag-ok">✓ Configured</span>
+        </div>
+        <div class="banner bn-info" style="margin-bottom:10px">ℹ️ Format is active. You can still edit it — it locks permanently after the first RFI is raised.</div>
+        <div class="cfg-trigger" onclick="openCfg('edit',true,false)">
+          <div class="ct-l">
+            <div class="ct-ico">🔢</div>
+            <div>
+              <div class="ct-title">MGT / RCC_Slab / 2026 / 1</div>
+              <div class="ct-sub">Project Code · Checklist Name · Year · Number &nbsp;·&nbsp; tap to edit</div>
+            </div>
+          </div>
+          <span style="font-size:16px">✏️</span>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
+          <button class="btn btn-secondary">Cancel</button>
+          <button class="btn btn-primary">Save</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Site Details</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="fg"><div class="fl"><span class="req">*</span> Radius (m)</div><input class="fi" value="1000000"></div>
+          <div class="fg"><div class="fl"><span class="req">*</span> TimeZone</div><select class="fi"><option>Asia/Kolkata (GMT+05:30)</option></select></div>
+        </div>
+        <div style="background:#e8f0f8;border-radius:8px;height:210px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;border:1px solid var(--border)">🗺️ Map — Surat, Gujarat</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RFI ON · Locked ── -->
+  <div id="sc-locked" class="tab-pane">
+    <div class="page-body col-2">
+      <div class="card">
+        <div class="card-title">Project Details</div>
+        <div class="fg"><div class="fl"><span class="req">*</span> Name</div><input class="fi" value="MVP"></div>
+        <div class="fg"><div class="fl"><span class="req">*</span> Unique Code</div><input class="fi" value="MVP"></div>
+        <div class="fg">
+          <div class="fl">Permissions</div>
+          <div class="perm-row">
+            <div class="perm-item">Location: <div class="toggle on" onclick="toggleG(this)" style="margin-left:6px"></div></div>
+            <div class="perm-item">Authentication: <div class="toggle on" onclick="toggleG(this)" style="margin-left:6px"></div></div>
+            <div class="perm-item">RFI: <div class="toggle on" style="margin-left:6px"></div></div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="fl" style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+          RFI Numbering Format <span class="cfg-tag tag-lock">🔒 Locked</span>
+        </div>
+        <div class="cfg-trigger locked-t" onclick="openCfg('locked',true,false)">
+          <div class="ct-l">
+            <div class="ct-ico grey">🔒</div>
+            <div>
+              <div class="ct-title" style="color:var(--mid)">MGT / RCC_Slab / 2026 / 1</div>
+              <div class="ct-sub">Locked — RFIs have been raised &nbsp;·&nbsp; tap to view format</div>
+            </div>
+          </div>
+          <span style="color:var(--muted);font-size:16px">👁</span>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
+          <button class="btn btn-secondary">Cancel</button>
+          <button class="btn btn-primary">Save</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Site Details</div>
+        <div style="background:#e8f0f8;border-radius:8px;height:210px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;border:1px solid var(--border)">🗺️ Map — Surat, Gujarat</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RFI ON · Nomenclature Inactive ── -->
+  <div id="sc-nom-off" class="tab-pane">
+    <div class="page-body col-2">
+      <div class="card">
+        <div class="card-title">Project Details</div>
+        <div class="fg"><div class="fl"><span class="req">*</span> Name</div><input class="fi" value="MVP"></div>
+        <div class="fg"><div class="fl"><span class="req">*</span> Unique Code</div><input class="fi" value="MVP"></div>
+        <div class="fg"><div class="fl"><span class="req">*</span> Client Name</div><input class="fi" value="Spaciefy Technology 1"></div>
+        <div class="fg">
+          <div class="fl">Permissions</div>
+          <div class="perm-row">
+            <div class="perm-item">Location: <div class="toggle on" onclick="toggleG(this)" style="margin-left:6px"></div></div>
+            <div class="perm-item">Authentication: <div class="toggle on" onclick="toggleG(this)" style="margin-left:6px"></div></div>
+            <div class="perm-item">RFI: <div class="toggle on" style="margin-left:6px"></div></div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="fl" style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+          RFI Numbering Format <span class="cfg-tag tag-no">Not Configured</span>
+        </div>
+        <div class="banner bn-warn">
+          ⚠️ <span><strong>Nomenclature is not active</strong> for this organisation. Nomenclature levels (L1–L7) will be disabled in the configurator. Contact your Super Admin to enable Nomenclature.</span>
+        </div>
+        <div class="cfg-trigger" onclick="openCfg('edit',false,true)">
+          <div class="ct-l">
+            <div class="ct-ico">🔢</div>
+            <div>
+              <div class="ct-title">Configure RFI Numbering Format</div>
+              <div class="ct-sub">Nomenclature levels will be greyed out in the configurator</div>
+            </div>
+          </div>
+          <span style="color:var(--brand);font-size:20px;font-weight:700">›</span>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
+          <button class="btn btn-secondary">Cancel</button>
+          <button class="btn btn-primary">Save</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Site Details</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="fg"><div class="fl"><span class="req">*</span> Radius (m)</div><input class="fi" value="1000000"></div>
+          <div class="fg"><div class="fl"><span class="req">*</span> TimeZone</div><select class="fi"><option>Asia/Kolkata (GMT+05:30)</option></select></div>
+        </div>
+        <div style="background:#e8f0f8;border-radius:8px;height:210px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;border:1px solid var(--border)">🗺️ Map — Surat, Gujarat</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pg-footer">digiQC © 2026 (v3.10.1) &nbsp;·&nbsp; Product by <span style="color:var(--brand);font-weight:700">SPACEIFY</span></div>
+</div>
+
+
+<!-- ═══════════════════════════
+     MODAL — CONFIGURATOR
+═══════════════════════════ -->
+<div class="modal-overlay" id="modal-cfg">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div style="flex:1">
+        <div class="modal-title">RFI Numbering Format</div>
+        <div class="modal-sub" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          Project: MVP &nbsp;·&nbsp; <span style="color:var(--brand);font-weight:600">System Admin</span>
+          <span id="cfg-nom-chip" style="display:none;align-items:center;gap:4px;background:#fef3c7;border:1px solid #fbbf24;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;color:#92400e;cursor:default" title="Nomenclature levels L1–L7 are disabled. Go to Super Admin → Organisation → Addon Services → Nomenclature to enable.">
+            ⚠️ Nomenclature Inactive — hover for info
+          </span>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-cfg')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="banner bn-warn" id="cfg-locked-banner" style="display:none">
+        🔒 <span><strong>Format is locked</strong> — RFIs have already been raised for this project. Shown below for reference only.</span>
+      </div>
+      <div class="banner bn-info" id="cfg-edit-banner">
+        ℹ️ Build the RFI number by selecting up to 7 levels. Levels are separated by <strong>/</strong>. Each option can only be selected once.
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Format Levels</div>
+      <div id="levels-container"></div>
+      <button class="add-lv-btn" id="add-lv-btn" onclick="addLevel()">+ Add Level</button>
+
+      <div class="divider" style="margin:18px 0"></div>
+
+      <div style="font-size:12px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px">Live Preview</div>
+      <div class="prev-box">
+        <div class="prev-lbl">Generated RFI Number</div>
+        <div class="prev-num" id="preview-out"><span class="prev-empty">Select at least one level to see a preview</span></div>
+      </div>
+    </div>
+    <div class="modal-footer" id="cfg-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-cfg')">Cancel</button>
+      <button class="btn btn-primary" id="btn-save-fmt" onclick="openConfirm()" disabled>Save Format</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════
+     MODAL — CONFIRM
+═══════════════════════════ -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal modal-sm">
+    <div class="modal-hdr">
+      <div class="modal-title">Confirm RFI Numbering Format</div>
+      <button class="modal-close" onclick="backToCfg()">✕</button>
+    </div>
+    <div class="modal-body" style="text-align:center;padding:28px 24px">
+      <div class="conf-ico">🔢</div>
+      <div style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:10px">Lock in this format?</div>
+      <div style="font-size:13px;color:var(--mid);line-height:1.65">
+        This format will be used for all RFIs in this project. You can edit it until the first RFI is raised, after which it will be <strong>permanently locked</strong>.
+      </div>
+      <div class="conf-prev" id="confirm-preview-txt">—</div>
+      <div style="font-size:12px;color:var(--muted)">Do you want to continue?</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="backToCfg()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveFormat()">Confirm &amp; Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"><span id="toast-msg"></span></div>
+
+
+<!-- ═══════════════════════════
+     JS
+═══════════════════════════ -->
+<script>
+// ── Router ──
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ── Tab switch ──
+function switchTab(el, paneId) {
+  el.closest('.tab-bar').querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const screen = el.closest('.screen');
+  screen.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById(paneId).classList.add('active');
+}
+
+// ── Scenario switch ──
+function switchScenario(el, paneId) {
+  document.querySelectorAll('#screen-project .pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#screen-project .tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById(paneId).classList.add('active');
+}
+
+// ── Generic toggle ──
+function toggleG(el) { el.classList.toggle('on'); }
+
+// ── SA: Nomenclature ──
+function toggleNom(el) {
+  el.classList.toggle('on');
+  const on = el.classList.contains('on');
+  showToast(on
+    ? '✓ Nomenclature enabled. L1–L7 levels are now available in the RFI configurator.'
+    : '⚠️ Nomenclature disabled. L1–L7 levels will be greyed out in the RFI configurator.',
+    on ? 't-ok' : 't-warn');
+}
+
+// ── SA: RFI ──
+function toggleRFI(el) {
+  el.classList.toggle('on');
+  const on = el.classList.contains('on');
+  const row = document.getElementById('sa-rfi-num-row');
+  const numT = document.getElementById('sa-rfi-num');
+  if (on) {
+    row.style.display = 'flex';
+    showToast('✓ RFI enabled. You can now enable RFI Auto-Numbering below.', 't-ok');
+  } else {
+    row.style.display = 'none';
+    numT.classList.remove('on');
+    showToast('RFI disabled. RFI Auto-Numbering has also been turned off. Existing RFI numbers preserved.', 't-warn');
+  }
+}
+
+// ── SA: RFI Auto-Numbering ──
+function toggleRFINum(el) {
+  el.classList.toggle('on');
+  const on = el.classList.contains('on');
+  showToast(on
+    ? '✓ RFI Auto-Numbering enabled. System Admins can now configure it per project.'
+    : 'RFI Auto-Numbering disabled. Existing RFI numbers on past RFIs are preserved.',
+    on ? 't-ok' : 't-info');
+}
+
+// ── Level options ──
+const OPT = [
+  { v: '', lbl: '— Select a level —', sample: null },
+  { v: 'project_name', lbl: 'Project Name', sample: 'Megatrone', grp: 'Project' },
+  { v: 'project_code', lbl: 'Project Code', sample: 'MGT', grp: 'Project' },
+  { v: 'checklist_name', lbl: 'Checklist Name', sample: 'RCC_Slab', grp: 'Checklist' },
+  { v: 'checklist_stage', lbl: 'Checklist Stage', sample: 'During', grp: 'Checklist' },
+  { v: 'reference_number', lbl: 'Reference Number', sample: '[Ref]', grp: 'Checklist', isRef: true },
+  { v: 'full_date', lbl: 'Full Date (DDMMYYYY)', sample: '24012026', grp: 'Date & Time' },
+  { v: 'time', lbl: 'Time (HH:MM, 24hr)', sample: '22:00', grp: 'Date & Time' },
+  { v: 'year', lbl: 'Year (YYYY)', sample: '2026', grp: 'Date & Time' },
+  { v: 'month', lbl: 'Month (MM)', sample: '01', grp: 'Date & Time' },
+  { v: 'date', lbl: 'Date (DD)', sample: '24', grp: 'Date & Time' },
+  { v: 'long_date', lbl: 'Long Date (DD-MM-YYYY)', sample: '24-01-2026', grp: 'Date & Time' },
+  { v: 'number', lbl: 'Number (Auto-increment)', sample: '1', grp: 'Sequence', isNum: true },
+  { v: 'nom_l1', lbl: 'Nomenclature — L1', sample: 'Building_A', grp: 'Nomenclature', isNom: true },
+  { v: 'nom_l2', lbl: 'Nomenclature — L2', sample: 'Ground_Floor', grp: 'Nomenclature', isNom: true },
+  { v: 'nom_l3', lbl: 'Nomenclature — L3', sample: 'Zone_C', grp: 'Nomenclature', isNom: true },
+  { v: 'nom_l4', lbl: 'Nomenclature — L4', sample: 'L4_Val', grp: 'Nomenclature', isNom: true },
+  { v: 'nom_l5', lbl: 'Nomenclature — L5', sample: 'L5_Val', grp: 'Nomenclature', isNom: true },
+  { v: 'nom_l6', lbl: 'Nomenclature — L6', sample: 'L6_Val', grp: 'Nomenclature', isNom: true },
+  { v: 'nom_l7', lbl: 'Nomenclature — L7', sample: 'L7_Val', grp: 'Nomenclature', isNom: true },
+];
+
+let levels = [];
+let cfgMode = 'edit';
+let nomOff = false;
+
+function isNomActiveFromSA() {
+  const t = document.getElementById('sa-nom');
+  return t ? t.classList.contains('on') : true;
+}
+
+// ── Project RFI toggle — live show/hide configurator ──
+function toggleRFI_project(el) {
+  el.classList.toggle('on');
+  const isOn = el.classList.contains('on');
+  const cfgBlock = document.getElementById('proj-cfg-block');
+  const offBlock  = document.getElementById('proj-rfi-off-block');
+  if (isOn) {
+    cfgBlock.style.display = 'block';
+    offBlock.style.display = 'none';
+  } else {
+    cfgBlock.style.display = 'none';
+    offBlock.style.display = 'block';
+  }
+}
+
+function openCfg(mode, preloaded, forceNomOff) {
+  cfgMode = mode;
+  nomOff = forceNomOff === true ? true : !isNomActiveFromSA();
+
+  const lockedBanner = document.getElementById('cfg-locked-banner');
+  const editBanner   = document.getElementById('cfg-edit-banner');
+  const footer       = document.getElementById('cfg-footer');
+  const addBtn       = document.getElementById('add-lv-btn');
+
+  // Nom inactive chip in modal header area
+  const nomChip = document.getElementById('cfg-nom-chip');
+  if (nomChip) nomChip.style.display = nomOff ? 'inline-flex' : 'none';
+
+  if (mode === 'locked') {
+    lockedBanner.style.display = 'flex';
+    editBanner.style.display   = 'none';
+    footer.style.display       = 'none';
+    addBtn.style.display       = 'none';
+    levels = [
+      { v: 'project_code', sv: 1 },
+      { v: 'checklist_name', sv: 1 },
+      { v: 'year', sv: 1 },
+      { v: 'number', sv: 1 }
+    ];
+  } else {
+    lockedBanner.style.display = 'none';
+    editBanner.style.display   = 'flex';
+    footer.style.display       = 'flex';
+    addBtn.style.display       = 'flex';
+    levels = preloaded
+      ? [{ v:'project_code',sv:1},{ v:'checklist_name',sv:1},{ v:'year',sv:1},{ v:'number',sv:1}]
+      : [{ v: '', sv: 1 }];
+  }
+
+  renderLevels();
+  updatePreview();
+  document.getElementById('modal-cfg').classList.add('open');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function renderLevels() {
+  const cont = document.getElementById('levels-container');
+  const addBtn = document.getElementById('add-lv-btn');
+  const usedVals = levels.map(l => l.v).filter(v => v !== '');
+  const isLocked = cfgMode === 'locked';
+  cont.innerHTML = '';
+
+  levels.forEach((lev, idx) => {
+    const row = document.createElement('div');
+    row.className = 'lv-row';
+
+    if (isLocked) {
+      const opt = OPT.find(o => o.v === lev.v);
+      row.innerHTML = `
+        <div class="lv-num">${idx+1}</div>
+        <div class="lv-inner" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="ro-chip">${opt ? opt.lbl : '—'}</span>
+          ${lev.v==='number' ? `<span style="font-size:11px;color:var(--muted)">Start value: ${lev.sv}</span>` : ''}
+        </div>`;
+    } else {
+      // Build grouped options — standard groups
+      let html = '<option value="">— Select a level —</option>';
+      ['Project','Checklist','Date & Time','Sequence'].forEach(grp => {
+        const opts = OPT.filter(o => o.grp === grp);
+        if (!opts.length) return;
+        html += `<optgroup label="${grp}">`;
+        opts.forEach(o => {
+          const dis = usedVals.includes(o.v) && o.v !== lev.v;
+          html += `<option value="${o.v}" ${lev.v===o.v?'selected':''} ${dis?'disabled':''}>${o.lbl}</option>`;
+        });
+        html += '</optgroup>';
+      });
+
+      // Nomenclature group — visually labelled as inactive when nomOff
+      const nomLabel = nomOff ? '⊘ Nomenclature Levels  (inactive)' : 'Nomenclature Levels';
+      html += `<optgroup label="${nomLabel}">`;
+      OPT.filter(o => o.grp === 'Nomenclature').forEach(o => {
+        const dis = (usedVals.includes(o.v) && o.v !== lev.v) || nomOff;
+        const suffix = nomOff ? '  ·  inactive' : '';
+        html += `<option value="${o.v}" ${lev.v===o.v?'selected':''} ${dis?'disabled':''}>${o.lbl}${suffix}</option>`;
+      });
+      html += '</optgroup>';
+
+      // Inline warning if a nom level was previously selected and nom got turned off
+      const nomWarning = (nomOff && lev.v && lev.v.startsWith('nom_'))
+        ? `<div class="nom-warn-row">⚠️ Nomenclature is inactive. Remove this level or enable it in Super Admin.</div>` : '';
+
+      // Tooltip attribute on select wrapper — hovering shows the tip
+      const tipAttr = nomOff
+        ? `title="Nomenclature (L1–L7) is not active for this organisation. Enable Nomenclature in Super Admin → Addon Services to use these levels."`
+        : '';
+
+      row.innerHTML = `
+        <div class="lv-num">${idx+1}</div>
+        <div class="lv-inner">
+          <div class="sel-wrap" ${tipAttr}>
+            <select class="lv-sel" onchange="updateLv(${idx},this.value)">${html}</select>
+            ${nomOff ? `<div class="nom-hover-tip">ⓘ Hover over the dropdown to see why Nomenclature levels are disabled</div>` : ''}
+          </div>
+          ${lev.v==='number' ? `
+            <div class="sv-row">
+              Start value:
+              <input class="sv-inp" type="number" min="1" value="${lev.sv}" oninput="updateSV(${idx},this.value)">
+              <span style="opacity:0.7">e.g. 1, 100, 500</span>
+            </div>` : ''}
+          ${nomWarning}
+        </div>
+        <button class="lv-rm" onclick="rmLv(${idx})" title="Remove level">×</button>`;
+    }
+    cont.appendChild(row);
+  });
+
+  if (addBtn) addBtn.disabled = levels.length >= 7;
+  const saveBtn = document.getElementById('btn-save-fmt');
+  const validLevels = levels.filter(l => l.v !== '' && !(nomOff && l.v.startsWith('nom_')));
+  if (saveBtn) saveBtn.disabled = validLevels.length === 0;
+}
+
+function updateLv(idx, val) { levels[idx].v = val; renderLevels(); updatePreview(); }
+function updateSV(idx, val) { levels[idx].sv = parseInt(val)||1; updatePreview(); }
+function addLevel() { if (levels.length >= 7) return; levels.push({ v:'', sv:1 }); renderLevels(); updatePreview(); }
+function rmLv(idx) { levels.splice(idx,1); renderLevels(); updatePreview(); }
+
+function updatePreview() {
+  const el = document.getElementById('preview-out');
+  const valid = levels.filter(l => l.v !== '' && !(nomOff && l.v.startsWith('nom_')));
+  if (!valid.length) { el.innerHTML = '<span class="prev-empty">Select at least one level to see a preview</span>'; return; }
+  el.innerHTML = valid.map((lev, i) => {
+    const opt = OPT.find(o => o.v === lev.v);
+    if (!opt) return '';
+    const txt = lev.v === 'number' ? String(lev.sv) : opt.sample;
+    const cls = opt.isRef ? 'seg-ref' : '';
+    const sep = i < valid.length-1 ? '<span class="sep"> / </span>' : '';
+    return `<span class="${cls}">${txt}</span>${sep}`;
+  }).join('');
+}
+
+function getPreviewTxt() {
+  return levels
+    .filter(l => l.v !== '' && !(nomOff && l.v.startsWith('nom_')))
+    .map(lev => { const opt = OPT.find(o => o.v===lev.v); return lev.v==='number' ? String(lev.sv) : (opt?opt.sample:''); })
+    .join(' / ');
+}
+
+function openConfirm() {
+  document.getElementById('confirm-preview-txt').textContent = getPreviewTxt();
+  closeModal('modal-cfg');
+  document.getElementById('modal-confirm').classList.add('open');
+}
+
+function backToCfg() {
+  closeModal('modal-confirm');
+  document.getElementById('modal-cfg').classList.add('open');
+}
+
+function saveFormat() {
+  closeModal('modal-confirm');
+  closeModal('modal-cfg');
+  // Switch to Configured scenario
+  const pills = document.querySelectorAll('#screen-project .pill');
+  pills.forEach(p => p.classList.remove('active'));
+  pills[2].classList.add('active');
+  document.querySelectorAll('#screen-project .tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('sc-configured').classList.add('active');
+  showToast('✓ RFI numbering format saved successfully.', 't-ok');
+}
+
+// ── Toast ──
+function showToast(msg, cls='t-info') {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.className = `toast ${cls} show`;
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 3800);
+}
+</script>
+</body>
+</html>
