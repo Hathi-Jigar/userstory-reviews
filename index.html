@@ -63,8 +63,16 @@
   .table tr:last-child td { border-bottom: none; }
   .table tr:hover td { background: #FAFBFC; }
 
-  .story-name { font-weight: 700; color: var(--text); font-size: 14px; }
+  .story-name { font-weight: 700; color: var(--text); font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  .story-name .edit-icon { opacity: 0; cursor: pointer; font-size: 13px; color: var(--text-muted); transition: opacity 0.15s; }
+  .table tr:hover .edit-icon { opacity: 1; }
+  .edit-icon:hover { color: var(--brand); }
   .story-folder { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .edit-title-input { font-size: 14px; font-weight: 700; font-family: inherit; border: 1.5px solid var(--brand); border-radius: 6px; padding: 4px 8px; width: 100%; outline: none; color: var(--text); }
+  .edit-title-actions { display: flex; gap: 6px; margin-top: 6px; }
+  .edit-title-actions button { padding: 3px 10px; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .btn-save-title { background: var(--brand); color: white; border: none; }
+  .btn-cancel-title { background: var(--white); color: var(--text-sub); border: 1px solid var(--border); }
 
   /* Status badges */
   .status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
@@ -340,7 +348,10 @@
       return `<tr>
         <td style="font-size:12px;color:var(--text-muted);font-weight:600">${i + 1}</td>
         <td>
-          <div class="story-name">${s.displayName}</div>
+          <div class="story-name" id="name-${s.folder}">
+            <span>${s.displayName}</span>
+            <span class="edit-icon" onclick="event.stopPropagation(); startEditTitle('${s.folder}', '${s.displayName.replace(/'/g, "\\'")}')">✏️</span>
+          </div>
           <div class="story-folder">reviews/${s.folder}/</div>
           ${movedHtml}
         </td>
@@ -404,6 +415,62 @@
     t.textContent = msg;
     t.className = 'toast show';
     setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function startEditTitle(folder, currentName) {
+    const el = document.getElementById('name-' + folder);
+    el.innerHTML = `
+      <div style="width:100%">
+        <input class="edit-title-input" id="title-input-${folder}" value="${currentName}" onkeydown="if(event.key==='Enter')saveTitle('${folder}');if(event.key==='Escape')cancelEditTitle('${folder}','${currentName.replace(/'/g, "\\'")}')"/>
+        <div class="edit-title-actions">
+          <button class="btn-save-title" onclick="saveTitle('${folder}')">Save</button>
+          <button class="btn-cancel-title" onclick="cancelEditTitle('${folder}','${currentName.replace(/'/g, "\\'")}')">Cancel</button>
+        </div>
+      </div>`;
+    document.getElementById('title-input-' + folder).focus();
+    document.getElementById('title-input-' + folder).select();
+  }
+
+  function cancelEditTitle(folder, name) {
+    const el = document.getElementById('name-' + folder);
+    el.innerHTML = `<span>${name}</span><span class="edit-icon" onclick="event.stopPropagation(); startEditTitle('${folder}', '${name.replace(/'/g, "\\'")}')">✏️</span>`;
+  }
+
+  async function saveTitle(folder) {
+    const input = document.getElementById('title-input-' + folder);
+    const newName = input.value.trim();
+    if (!newName) return;
+
+    const token = localStorage.getItem('review_token');
+    if (!token) { showToast('Access key required'); return; }
+
+    input.disabled = true;
+
+    try {
+      // Fetch current spec.md
+      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/reviews/${folder}/spec.md`, {
+        headers: { Authorization: `token ${token}` }
+      });
+      const data = await res.json();
+      const content = atob(data.content);
+
+      // Replace first # heading with new name
+      const updated = content.replace(/^#\s+.+$/m, `# ${newName}`);
+      const encoded = btoa(unescape(encodeURIComponent(updated)));
+
+      // Push updated spec
+      await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/reviews/${folder}/spec.md`, {
+        method: 'PUT',
+        headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: `Rename user story: ${newName}`, content: encoded, sha: data.sha })
+      });
+
+      showToast('Title updated: ' + newName);
+      setTimeout(() => loadStories(), 1000);
+    } catch (e) {
+      showToast('Error saving title');
+      input.disabled = false;
+    }
   }
 
   checkSetup();
