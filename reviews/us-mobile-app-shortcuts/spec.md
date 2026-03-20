@@ -1,24 +1,24 @@
-# Mobile App Shortcuts Long Press
+# Feature PRD — App Shortcuts (Long Press Quick Actions)
 
-**Module / Area:** Mobile App Ã¢ÂÂ Global / Cross-Module
+**Module / Area:** Mobile App — Global / Cross-Module
 
 **Type:** Feature
 
 **Interactive Prototype:**
-- View Live Screen Ã¢ÂÂ *Not Available*
-- View Source Code Ã¢ÂÂ *Not Available*
+- View Live Screen — *Not Available*
+- View Source Code — *Not Available*
 
 ---
 
-## Ã°ÂÂÂ Brief Description
+## 📝 Brief Description
 
-When a user long-presses the digiQC app icon on their Android or iOS device, a quick-action menu appears with five shortcuts. Each shortcut takes the user directly into a specific screen or action inside the app Ã¢ÂÂ skipping the home screen and any intermediate navigation. This saves time for field engineers and site teams who need to start an inspection, raise an instruction, or check their to-do items quickly while on-site.
+When a user long-presses the digiQC app icon on their Android or iOS device, a quick-action menu appears with five shortcuts. Each shortcut takes the user directly into a specific screen or action inside the app — skipping the home screen and any intermediate navigation. This saves time for field engineers and site teams who need to start an inspection, raise an instruction, or check their to-do items quickly while on-site.
 
 ---
 
-## Ã°ÂÂÂ¯ Jobs to Be Done (JTD)
+## 🎯 Jobs to Be Done (JTD)
 
-| Role | WhenÃ¢ÂÂ¦ | They want toÃ¢ÂÂ¦ | So they canÃ¢ÂÂ¦ |
+| Role | When… | They want to… | So they can… |
 |------|--------|---------------|--------------|
 | Site Engineer / QC Inspector | On-site, about to start a new inspection | Jump straight to the new inspection form without navigating through the app | Save time and start capturing data faster |
 | Site Engineer / QC Inspector | On-site, spotting a quality issue | Open the raise instruction flow immediately | Record and assign the issue before moving to the next location |
@@ -27,17 +27,17 @@ When a user long-presses the digiQC app icon on their Android or iOS device, a q
 
 ---
 
-## Ã°ÂÂÂ¡ How Might We (HMW)
+## 💡 How Might We (HMW)
 
 - How might we reduce the number of taps required for the most frequent field actions?
 - How might we make the app feel faster and more suited for on-site use, where time and attention are limited?
 - How might we support users who already know what they need to do, so the app gets out of their way?
-- How might we ensure shortcuts always land the user in the right state Ã¢ÂÂ not a broken or empty screen Ã¢ÂÂ even if they are not logged in or lack permission?
+- How might we ensure shortcuts always land the user in the right state — not a broken or empty screen — even if they are not logged in or lack permission?
 - How might we make the shortcut list feel like it was designed for field engineers, not just added as a technical feature?
 
 ---
 
-## Ã°ÂÂÂ¤ User Persona
+## 👤 User Persona
 
 | Role | Context of Use | Goal | Frustration | Success |
 |------|----------------|------|-------------|---------|
@@ -46,7 +46,7 @@ When a user long-presses the digiQC app icon on their Android or iOS device, a q
 
 ---
 
-## Ã°ÂÂÂ User Story
+## 📌 User Story
 
 > As a **Site Engineer / QC Inspector**, I want to long-press the digiQC app icon and see quick shortcuts, so that I can jump directly to my most-used actions without navigating through the app every time.
 
@@ -54,11 +54,11 @@ When a user long-presses the digiQC app icon on their Android or iOS device, a q
 
 ---
 
-## Ã¢ÂÂ Acceptance Criteria
+## ✅ Acceptance Criteria
 
 ### Shortcut Availability
 
-- [ ] When any user long-presses the digiQC app icon on Android or iOS, a shortcut menu appears with exactly 5 options Ã¢ÂÂ regardless of whether they are logged in or not
+- [ ] When any user long-presses the digiQC app icon on Android or iOS, a shortcut menu appears with exactly 5 options — regardless of whether they are logged in or not
 - [ ] The shortcuts are displayed in this order:
   1. Start New Inspection
   2. Raise New Instruction
@@ -66,70 +66,70 @@ When a user long-presses the digiQC app icon on their Android or iOS device, a q
   4. Inspection To Do
   5. Instruction To Do
 - [ ] Each shortcut shows a label and a recognisable icon
-- [ ] The shortcut menu follows the native OS behaviour Ã¢ÂÂ it does not open the full app first
-- [ ] Shortcuts are always visible on the OS home screen Ã¢ÂÂ the app does not hide or remove them based on login state
+- [ ] The shortcut menu follows the native OS behaviour — it does not open the full app first
+- [ ] Shortcuts are always visible on the OS home screen — the app does not hide or remove them based on login state
 
 ---
 
-### Shortcut 1 Ã¢ÂÂ Start New Inspection
+### Shortcut 1 — Start New Inspection
 
-- [ ] Tapping "Start New Inspection" opens the digiQC app and takes the user directly to the Inspection screen with the **Add / New Inspection form already open** Ã¢ÂÂ same state as tapping the "+" button on the Inspection list screen
+- [ ] Tapping "Start New Inspection" opens the digiQC app and takes the user directly to the Inspection screen with the **Add / New Inspection form already open** — same state as tapping the "+" button on the Inspection list screen
 - [ ] The user can immediately begin filling in the inspection form without any extra tap
-- [ ] If the user is not logged in, they are taken to the login screen immediately upon tapping the shortcut; after successful login, the app redirects them directly to the new inspection form Ã¢ÂÂ not the home screen
+- [ ] If the user is not logged in, they are taken to the login screen immediately upon tapping the shortcut; after successful login, the app redirects them directly to the new inspection form — not the home screen
 
 ---
 
-### Shortcut 2 Ã¢ÂÂ Raise New Instruction
+### Shortcut 2 — Raise New Instruction
 
-- [ ] Tapping "Raise New Instruction" opens the digiQC app and takes the user directly to the Instruction screen with the **Add / New Instruction form already open** Ã¢ÂÂ same state as tapping the "+" button on the Instruction list screen
+- [ ] Tapping "Raise New Instruction" opens the digiQC app and takes the user directly to the Instruction screen with the **Add / New Instruction form already open** — same state as tapping the "+" button on the Instruction list screen
 - [ ] The user can immediately begin filling in the instruction form without any extra tap
-- [ ] If the user is not logged in, they are taken to the login screen immediately upon tapping the shortcut; after successful login, the app redirects them directly to the new instruction form Ã¢ÂÂ not the home screen
+- [ ] If the user is not logged in, they are taken to the login screen immediately upon tapping the shortcut; after successful login, the app redirects them directly to the new instruction form — not the home screen
 
 ---
 
-### Shortcut 3 Ã¢ÂÂ Fill New Register
+### Shortcut 3 — Fill New Register
 
 - [ ] Tapping "Fill New Register" opens **app.digiqc.com** in the device's default web browser
 - [ ] The browser navigates to the user's first project and lands on the **Register tab**
 - [ ] "First project" is defined as the first project in the user's project list, ordered the same way as shown in the app
-- [ ] If the user is not logged in to the web app, they are taken to the web login screen; after successful login, the browser redirects them to the Register tab of their first project Ã¢ÂÂ not the default dashboard
+- [ ] If the user is not logged in to the web app, they are taken to the web login screen; after successful login, the browser redirects them to the Register tab of their first project — not the default dashboard
 - [ ] If the user has no projects assigned, the browser opens app.digiqc.com and shows the default empty project state with a message guiding the user
 
 ---
 
-### Shortcut 4 Ã¢ÂÂ Inspection To Do
+### Shortcut 4 — Inspection To Do
 
 - [ ] Tapping "Inspection To Do" opens the digiQC app and takes the user directly to the **Inspection module**, with the **To Do tab pre-selected and active**
 - [ ] The list loads and shows all inspections assigned to or pending for the logged-in user
-- [ ] If the user is not logged in, they are taken to the login screen immediately upon tapping the shortcut; after successful login, the app redirects them directly to the Inspection To Do tab Ã¢ÂÂ not the home screen
+- [ ] If the user is not logged in, they are taken to the login screen immediately upon tapping the shortcut; after successful login, the app redirects them directly to the Inspection To Do tab — not the home screen
 
 ---
 
-### Shortcut 5 Ã¢ÂÂ Instruction To Do
+### Shortcut 5 — Instruction To Do
 
 - [ ] Tapping "Instruction To Do" opens the digiQC app and takes the user directly to the **Instruction module**, with the **To Do tab pre-selected and active**
 - [ ] The list loads and shows all instructions assigned to or pending for the logged-in user
-- [ ] If the user is not logged in, they are taken to the login screen immediately upon tapping the shortcut; after successful login, the app redirects them directly to the Instruction To Do tab Ã¢ÂÂ not the home screen
+- [ ] If the user is not logged in, they are taken to the login screen immediately upon tapping the shortcut; after successful login, the app redirects them directly to the Instruction To Do tab — not the home screen
 
 ---
 
 ### Role & Permission Behaviour
 
-- [ ] Shortcuts are visible and accessible to all users Ã¢ÂÂ both logged in and logged out Ã¢ÂÂ from the OS home screen
+- [ ] Shortcuts are visible and accessible to all users — both logged in and logged out — from the OS home screen
 - [ ] A logged-out user who taps any shortcut is taken to the login screen; the intended shortcut destination is remembered and the user is redirected there immediately after successful login
-- [ ] The app must not drop the shortcut intent after login Ã¢ÂÂ the user must always land on the shortcut target, not the home screen
+- [ ] The app must not drop the shortcut intent after login — the user must always land on the shortcut target, not the home screen
 - [ ] Once logged in, shortcuts work for all roles without restriction
-- [ ] If a user's role does not have permission to raise an instruction or start an inspection, they land on the respective screen and see the same restricted state they would normally see inside the app Ã¢ÂÂ no special shortcut error
+- [ ] If a user's role does not have permission to raise an instruction or start an inspection, they land on the respective screen and see the same restricted state they would normally see inside the app — no special shortcut error
 - [ ] Shortcuts do not bypass any existing role or permission restrictions in the app
 
 ---
 
 ### States & Validations
 
-- [ ] If the app is already open in the background, tapping a shortcut navigates within the running app Ã¢ÂÂ it does not open a second instance
+- [ ] If the app is already open in the background, tapping a shortcut navigates within the running app — it does not open a second instance
 - [ ] If the app is force-closed or not running, the shortcut launches the app and navigates to the correct destination
-- [ ] If the app is updating or unavailable, the OS handles this gracefully Ã¢ÂÂ the shortcut behaves the same as tapping the app icon directly
-- [ ] No shortcut should open to a blank or crashed screen Ã¢ÂÂ if navigation fails, the user lands on the home screen with no error loop
+- [ ] If the app is updating or unavailable, the OS handles this gracefully — the shortcut behaves the same as tapping the app icon directly
+- [ ] No shortcut should open to a blank or crashed screen — if navigation fails, the user lands on the home screen with no error loop
 
 ---
 
@@ -142,59 +142,59 @@ When a user long-presses the digiQC app icon on their Android or iOS device, a q
 
 ---
 
-### Flow Continuity Ã¢ÂÂ What Happens Next
+### Flow Continuity — What Happens Next
 
-- [ ] After completing the action launched by the shortcut (e.g., submitting a new inspection), the user is returned to the normal in-app flow Ã¢ÂÂ no forced app restart or loop back to the shortcut menu
+- [ ] After completing the action launched by the shortcut (e.g., submitting a new inspection), the user is returned to the normal in-app flow — no forced app restart or loop back to the shortcut menu
 - [ ] The back button / navigation behaves exactly as it would if the user had navigated to the screen normally from inside the app
 
 ---
 
-## Ã¢ÂÂ Ã¯Â¸Â Edge Cases & Constraints
+## ⚠️ Edge Cases & Constraints
 
 **Positive Cases**
-- [ ] A logged-in user with full permissions taps any shortcut Ã¢ÂÂ they land on the exact target screen within 2Ã¢ÂÂ3 seconds
-- [ ] A user who has the app open in the background taps a shortcut Ã¢ÂÂ they are taken to the target screen without restarting the app
+- [ ] A logged-in user with full permissions taps any shortcut — they land on the exact target screen within 2–3 seconds
+- [ ] A user who has the app open in the background taps a shortcut — they are taken to the target screen without restarting the app
 
 **Negative Cases**
-- [ ] A logged-out user taps any shortcut Ã¢ÂÂ they see the login screen and after successful login are redirected to the exact shortcut destination, not the home screen
-- [ ] A user with read-only permissions taps "Start New Inspection" or "Raise New Instruction" Ã¢ÂÂ they land on the respective screen but the "+" button is hidden or disabled, matching normal app behaviour
+- [ ] A logged-out user taps any shortcut — they see the login screen and after successful login are redirected to the exact shortcut destination, not the home screen
+- [ ] A user with read-only permissions taps "Start New Inspection" or "Raise New Instruction" — they land on the respective screen but the "+" button is hidden or disabled, matching normal app behaviour
 
 **Edge Cases**
-- [ ] User has no projects assigned Ã¢ÂÂ "Fill New Register" shortcut opens app.digiqc.com and shows the empty project state gracefully Ã¢ÂÂ no crash or broken redirect
-- [ ] User taps a shortcut while the app is mid-update or loading Ã¢ÂÂ shortcut behaves like a normal app open, takes the user to the home screen if the deep link cannot resolve
-- [ ] User's session has expired Ã¢ÂÂ treated the same as logged-out; they see the login screen, and after re-authentication are redirected to the shortcut destination Ã¢ÂÂ not the home screen
-- [ ] User switches to a different account after using shortcuts Ã¢ÂÂ shortcuts still work and navigate based on the currently logged-in account
-- [ ] Device OS does not support app shortcuts (very old Android/iOS versions) Ã¢ÂÂ shortcut menu simply does not appear; the app continues to function normally with no impact
+- [ ] User has no projects assigned → "Fill New Register" shortcut opens app.digiqc.com and shows the empty project state gracefully — no crash or broken redirect
+- [ ] User taps a shortcut while the app is mid-update or loading → shortcut behaves like a normal app open, takes the user to the home screen if the deep link cannot resolve
+- [ ] User's session has expired → treated the same as logged-out; they see the login screen, and after re-authentication are redirected to the shortcut destination — not the home screen
+- [ ] User switches to a different account after using shortcuts → shortcuts still work and navigate based on the currently logged-in account
+- [ ] Device OS does not support app shortcuts (very old Android/iOS versions) → shortcut menu simply does not appear; the app continues to function normally with no impact
 
 **How to Test**
-- Test each shortcut on both Android and iOS Ã¢ÂÂ confirm the landing screen and state is exactly correct (e.g., new form open, correct tab selected)
-- Test while logged out Ã¢ÂÂ confirm each shortcut takes the user to the login screen, and after login they land on the correct shortcut destination (not the home screen)
-- Test with a user who has no projects Ã¢ÂÂ confirm "Fill New Register" does not crash
-- Test with a restricted role Ã¢ÂÂ confirm shortcuts land correctly but permissions are respected within the screen
-- Test with the app running in the background Ã¢ÂÂ confirm navigation happens within the existing app instance
+- Test each shortcut on both Android and iOS — confirm the landing screen and state is exactly correct (e.g., new form open, correct tab selected)
+- Test while logged out — confirm each shortcut takes the user to the login screen, and after login they land on the correct shortcut destination (not the home screen)
+- Test with a user who has no projects — confirm "Fill New Register" does not crash
+- Test with a restricted role — confirm shortcuts land correctly but permissions are respected within the screen
+- Test with the app running in the background — confirm navigation happens within the existing app instance
 - Test on both older and latest OS versions to confirm shortcut menu appears and functions correctly
 
 ---
 
-## Ã°ÂÂÂ¨ Design Prompt
+## 🎨 Design Prompt
 
 ```
-Screen: App Shortcuts Ã¢ÂÂ Long Press Quick Action Menu (OS-native)
-Platform: Mobile Ã¢ÂÂ Android and iOS
-Audience: Site Engineer, QC Inspector, Project Manager Ã¢ÂÂ field use
-Style: Native OS shortcut menu. No custom UI needed Ã¢ÂÂ follows OS visual style.
+Screen: App Shortcuts — Long Press Quick Action Menu (OS-native)
+Platform: Mobile — Android and iOS
+Audience: Site Engineer, QC Inspector, Project Manager — field use
+Style: Native OS shortcut menu. No custom UI needed — follows OS visual style.
        Icons must be simple, single-colour glyphs, matching digiQC icon language.
 
 Shortcuts to show (in this order):
-1. Start New Inspection Ã¢ÂÂ icon: clipboard with a "+" mark
-2. Raise New Instruction Ã¢ÂÂ icon: alert or exclamation with a "+" mark
-3. Fill New Register Ã¢ÂÂ icon: table grid or form sheet
-4. Inspection To Do Ã¢ÂÂ icon: clipboard with a checkmark or clock
-5. Instruction To Do Ã¢ÂÂ icon: list with a clock or pending indicator
+1. Start New Inspection — icon: clipboard with a "+" mark
+2. Raise New Instruction — icon: alert or exclamation with a "+" mark
+3. Fill New Register — icon: table grid or form sheet
+4. Inspection To Do — icon: clipboard with a checkmark or clock
+5. Instruction To Do — icon: list with a clock or pending indicator
 
 States to show in prototype:
-- Android: Long-press popup appearing above the app icon with 5 shortcut rows Ã¢ÂÂ native Material You style, dark overlay background
-- iOS: Long-press context menu appearing above the app icon with 5 shortcut rows Ã¢ÂÂ native iOS style with rounded card and blur background
+- Android: Long-press popup appearing above the app icon with 5 shortcut rows — native Material You style, dark overlay background
+- iOS: Long-press context menu appearing above the app icon with 5 shortcut rows — native iOS style with rounded card and blur background
 
 Icons:
 - Each shortcut row shows: [icon] [label]
@@ -202,7 +202,7 @@ Icons:
 - Use digiQC brand colour (#FC5027) as icon tint where the OS allows custom icon colours
 
 No modals or additional screens needed for the shortcut menu itself.
-All landing screens (inspection form, instruction form, to-do tabs, web browser) are existing screens Ã¢ÂÂ no new screen design needed for those.
+All landing screens (inspection form, instruction form, to-do tabs, web browser) are existing screens — no new screen design needed for those.
 
 Notes:
 - The prototype should demonstrate the long-press gesture and the shortcut menu appearance on both platforms
@@ -211,22 +211,22 @@ Notes:
 
 ---
 
-## Ã°ÂÂÂ£ Release Note Details
+## 📣 Release Note Details
 
 **Overview**
-digiQC now supports App Shortcuts on Android and iOS. Long-pressing the digiQC app icon gives you five quick actions Ã¢ÂÂ so you can jump straight to your most-used screens without opening the app and navigating manually.
+digiQC now supports App Shortcuts on Android and iOS. Long-pressing the digiQC app icon gives you five quick actions — so you can jump straight to your most-used screens without opening the app and navigating manually.
 
 **Who Benefits & How**
-- **Site Engineers / QC Inspectors:** Start inspections and raise instructions from the home screen in one tap Ã¢ÂÂ saves time on-site
+- **Site Engineers / QC Inspectors:** Start inspections and raise instructions from the home screen in one tap — saves time on-site
 - **Project Managers / QC Heads:** Check pending inspections and instructions directly without navigating through the app
 
 **What's New**
 Five shortcuts available on long press:
-1. **Start New Inspection** Ã¢ÂÂ Opens the new inspection form directly
-2. **Raise New Instruction** Ã¢ÂÂ Opens the new instruction form directly
-3. **Fill New Register** Ã¢ÂÂ Opens the Register tab in your first project on the digiQC web app
-4. **Inspection To Do** Ã¢ÂÂ Takes you straight to your inspection pending list
-5. **Instruction To Do** Ã¢ÂÂ Takes you straight to your instruction pending list
+1. **Start New Inspection** — Opens the new inspection form directly
+2. **Raise New Instruction** — Opens the new instruction form directly
+3. **Fill New Register** — Opens the Register tab in your first project on the digiQC web app
+4. **Inspection To Do** — Takes you straight to your inspection pending list
+5. **Instruction To Do** — Takes you straight to your instruction pending list
 
 **How It Works**
-Long-press the digiQC app icon on your Android or iOS home screen. A quick-action menu appears with five shortcuts. Tap any shortcut and you land directly on that screen Ã¢ÂÂ no extra navigation needed. If you are not logged in, you will be taken to the login screen first and redirected to the right place after sign-in.
+Long-press the digiQC app icon on your Android or iOS home screen. A quick-action menu appears with five shortcuts. Tap any shortcut and you land directly on that screen — no extra navigation needed. If you are not logged in, you will be taken to the login screen first and redirected to the right place after sign-in.
