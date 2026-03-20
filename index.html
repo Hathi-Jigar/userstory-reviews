@@ -448,7 +448,7 @@
 
     try {
       // Fetch current spec.md
-      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/reviews/${folder}/spec.md`, {
+      const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/reviews/${folder}/spec.md`, {
         headers: { Authorization: `token ${token}` }
       });
       const data = await res.json();
@@ -459,7 +459,7 @@
       const encoded = btoa(unescape(encodeURIComponent(updated)));
 
       // Push updated spec
-      await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/reviews/${folder}/spec.md`, {
+      await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/reviews/${folder}/spec.md`, {
         method: 'PUT',
         headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: `Rename user story: ${newName}`, content: encoded, sha: data.sha })
