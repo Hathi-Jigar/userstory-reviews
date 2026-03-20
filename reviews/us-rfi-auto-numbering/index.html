@@ -353,7 +353,7 @@
       });
       if (res.ok) {
         const data = await res.json();
-        const decision = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+        const decision = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, "")))));
         updateBadge(decision.decision, decision.reviewer);
       }
     } catch (e) { /* no decision yet */ }
@@ -381,7 +381,7 @@
       });
       if (res.ok) {
         const data = await res.json();
-        rawMarkdown = decodeURIComponent(escape(atob(data.content)));
+        rawMarkdown = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ""))));
         specSha = data.sha;
         document.getElementById('specContent').innerHTML = marked.parse(rawMarkdown);
       } else {
@@ -466,7 +466,7 @@
       });
       if (res.ok) {
         const data = await res.json();
-        comments = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+        comments = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, "")))));
       } else { comments = []; }
     } catch (e) { comments = []; }
     renderComments();

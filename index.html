@@ -269,6 +269,7 @@
             story.reviewer = dec.reviewer || dec.movedBy || null;
             story.timestamp = dec.timestamp || null;
             story.movedTo = dec.movedTo || null;
+            if (dec.displayName) story.displayName = dec.displayName;
           }
         } catch (e) {}
 
@@ -447,22 +448,22 @@
     input.disabled = true;
 
     try {
-      // Fetch current spec.md
-      const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/reviews/${folder}/spec.md`, {
+      // Fetch current decision.json
+      const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/reviews/${folder}/decision.json`, {
         headers: { Authorization: `token ${token}` }
       });
       const data = await res.json();
-      const content = atob(data.content);
+      const dec = JSON.parse(decodeURIComponent(escape(atob(data.content))));
 
-      // Replace first # heading with new name
-      const updated = content.replace(/^#\s+.+$/m, `# ${newName}`);
-      const encoded = btoa(unescape(encodeURIComponent(updated)));
+      // Update displayName
+      dec.displayName = newName;
+      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(dec, null, 2))));
 
-      // Push updated spec
-      await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/reviews/${folder}/spec.md`, {
+      // Push updated decision.json
+      await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/reviews/${folder}/decision.json`, {
         method: 'PUT',
         headers: { Authorization: `token ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: `Rename user story: ${newName}`, content: encoded, sha: data.sha })
+        body: JSON.stringify({ message: `Rename display title: ${newName}`, content: encoded, sha: data.sha })
       });
 
       showToast('Title updated: ' + newName);
