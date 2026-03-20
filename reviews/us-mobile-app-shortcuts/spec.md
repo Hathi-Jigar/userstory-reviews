@@ -4,6 +4,10 @@
 
 **Type:** Feature
 
+**Interactive Prototype:**
+- View Live Screen — *Not Available*
+- View Source Code — *Not Available*
+
 ---
 
 ## 📝 Brief Description
