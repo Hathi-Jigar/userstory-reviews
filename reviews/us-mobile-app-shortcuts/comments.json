@@ -108,5 +108,16 @@
     "resolvedBy": null,
     "resolvedAt": null,
     "reply": null
+  },
+  {
+    "id": "c1774054885255",
+    "selectedText": "no projects assigned",
+    "comment": "what if that client/tenant does not have register module enabled, or that user is not authorised to use register?",
+    "author": "Sumant",
+    "createdAt": "2026-03-21T01:01:25.255Z",
+    "status": "open",
+    "resolvedBy": null,
+    "resolvedAt": null,
+    "reply": null
   }
 ]
