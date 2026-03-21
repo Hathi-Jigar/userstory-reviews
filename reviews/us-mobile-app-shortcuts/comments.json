@@ -20,5 +20,16 @@
     "resolvedBy": null,
     "resolvedAt": null,
     "reply": null
+  },
+  {
+    "id": "c1774054231542",
+    "selectedText": "ven if they are not logged in or lack permission",
+    "comment": "IF they are not logged in, how will the shortcut work?",
+    "author": "Sumant",
+    "createdAt": "2026-03-21T00:50:31.542Z",
+    "status": "open",
+    "resolvedBy": null,
+    "resolvedAt": null,
+    "reply": null
   }
 ]
