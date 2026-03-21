@@ -31,5 +31,16 @@
     "resolvedBy": null,
     "resolvedAt": null,
     "reply": null
+  },
+  {
+    "id": "c1774054347491",
+    "selectedText": "Start New Inspection",
+    "comment": "what about, when inspection was already started and the inspector has to now do next stage, which may be in \"available\" status?",
+    "author": "Sumant",
+    "createdAt": "2026-03-21T00:52:27.491Z",
+    "status": "open",
+    "resolvedBy": null,
+    "resolvedAt": null,
+    "reply": null
   }
 ]
