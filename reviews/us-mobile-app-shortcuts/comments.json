@@ -42,5 +42,16 @@
     "resolvedBy": null,
     "resolvedAt": null,
     "reply": null
+  },
+  {
+    "id": "c1774054385725",
+    "selectedText": "Fill New Register",
+    "comment": "why is it a \"new\" register.\nin existing register if there are few entries already made, then what?",
+    "author": "Sumant",
+    "createdAt": "2026-03-21T00:53:05.725Z",
+    "status": "open",
+    "resolvedBy": null,
+    "resolvedAt": null,
+    "reply": null
   }
 ]
