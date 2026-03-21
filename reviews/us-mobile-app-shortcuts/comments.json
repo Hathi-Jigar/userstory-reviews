@@ -130,5 +130,16 @@
     "resolvedBy": null,
     "resolvedAt": null,
     "reply": null
+  },
+  {
+    "id": "c1774055295086",
+    "selectedText": "sign-in.",
+    "comment": "last comment, I have reviewed this document and given all my comments.\n\nThis is first real interaction on the github based SDLC and I feel proud of what JH has been able to accomplish.\n\nOne suggestion, while comments are been generated, where should be auto-numbering on them. Currently date time is mentioned, in same row, on right side a number giving idea on how many comments have been raised, will be helpful.",
+    "author": "Sumant",
+    "createdAt": "2026-03-21T01:08:15.086Z",
+    "status": "open",
+    "resolvedBy": null,
+    "resolvedAt": null,
+    "reply": null
   }
 ]
