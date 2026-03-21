@@ -119,5 +119,16 @@
     "resolvedBy": null,
     "resolvedAt": null,
     "reply": null
+  },
+  {
+    "id": "c1774055034105",
+    "selectedText": "logged out",
+    "comment": "if user is logged out, then all shortcuts will be visible as system does not know what modules are enabled for that user.\nhowever if the user is logged in then system already knows, so will all 3 still be shown or only where he has rights?",
+    "author": "Sumant",
+    "createdAt": "2026-03-21T01:03:54.105Z",
+    "status": "open",
+    "resolvedBy": null,
+    "resolvedAt": null,
+    "reply": null
   }
 ]
