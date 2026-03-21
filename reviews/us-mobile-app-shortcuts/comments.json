@@ -86,5 +86,16 @@
     "resolvedBy": null,
     "resolvedAt": null,
     "reply": null
+  },
+  {
+    "id": "c1774054707222",
+    "selectedText": "illing in the inspection",
+    "comment": "which project will be kept as defaut when inspection screen opens?\nCan he ADD new Inspection, as well as, Inspect any of the AVAILABLE inspections?",
+    "author": "Sumant",
+    "createdAt": "2026-03-21T00:58:27.222Z",
+    "status": "open",
+    "resolvedBy": null,
+    "resolvedAt": null,
+    "reply": null
   }
 ]
