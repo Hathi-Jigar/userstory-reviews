@@ -64,5 +64,16 @@
     "resolvedBy": null,
     "resolvedAt": null,
     "reply": null
+  },
+  {
+    "id": "c1774054527608",
+    "selectedText": "Fill New Register",
+    "comment": "In earlier parts of JTBD or user story, register was not mentioned.",
+    "author": "Sumant",
+    "createdAt": "2026-03-21T00:55:27.608Z",
+    "status": "open",
+    "resolvedBy": null,
+    "resolvedAt": null,
+    "reply": null
   }
 ]
